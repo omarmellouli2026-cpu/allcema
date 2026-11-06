@@ -1,0 +1,21 @@
+---
+import Base from '../../layouts/Base.astro';
+import { load, desc, fmtDate } from '../../lib/data.js';
+export function getStaticPaths() {
+  return load().works.map((w) => ({ params: { slug: w.path.split('/')[2] }, props: { w } }));
+}
+const { w } = Astro.props;
+const crumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: w.facts.title, item: new URL(w.path, Astro.site).href }] };
+---
+<Base title={w.title} description={desc(w.excerpt)} path={w.path} schema={[w.schema, crumbs]} type="article">
+  <p class="crumbs"><a href="/">الرئيسية</a> › {w.facts.title}</p>
+  <h1>{w.title}</h1>
+  <p class="meta">آخر تحديث: {fmtDate(w.at)}</p>
+  <article set:html={w.html} />
+  {w.episodes.length > 0 && <>
+    <h2>ملخصات الحلقات</h2>
+    <div class="grid">{w.episodes.map((e) => <a class="card" href={e.path}><h3>الحلقة {e.ep}</h3><p>{desc(e.excerpt, 110)}</p></a>)}</div>
+  </>}
+</Base>

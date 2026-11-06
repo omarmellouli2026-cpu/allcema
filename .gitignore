@@ -2,3 +2,4 @@ elcinema_data/html_cache/
 elcinema_data/run.lock
 __pycache__/
 *.pyc
+elcinema_data/html_cache/

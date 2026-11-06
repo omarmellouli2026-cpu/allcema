@@ -1,0 +1,22 @@
+---
+import Base from '../../layouts/Base.astro';
+import { load, desc, fmtDate } from '../../lib/data.js';
+export function getStaticPaths() {
+  return load().episodes.map((e) => ({ params: { slug: e.path.split('/')[2] }, props: { e } }));
+}
+const { e } = Astro.props;
+const items = [{ '@type': 'ListItem', position: 1, name: 'الرئيسية', item: new URL('/', Astro.site).href }];
+if (e.parent) items.push({ '@type': 'ListItem', position: 2, name: e.parent.facts.title, item: new URL(e.parent.path, Astro.site).href });
+items.push({ '@type': 'ListItem', position: items.length + 1, name: `الحلقة ${e.ep}`, item: new URL(e.path, Astro.site).href });
+const crumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items };
+---
+<Base title={e.title} description={desc(e.excerpt)} path={e.path} schema={[e.schema, crumbs]} type="article">
+  <p class="crumbs"><a href="/">الرئيسية</a> › {e.parent ? <a href={e.parent.path}>{e.parent.facts.title}</a> : e.facts.title} › الحلقة {e.ep}</p>
+  <h1>{e.title}</h1>
+  <p class="meta">نُشر/حُدّث: {fmtDate(e.at)}</p>
+  <article set:html={e.html} />
+  <nav class="pager">
+    {e.prev ? <a href={e.prev.path}>→ الحلقة {e.prev.ep}</a> : <span />}
+    {e.next ? <a href={e.next.path}>الحلقة {e.next.ep} ←</a> : <span />}
+  </nav>
+</Base>

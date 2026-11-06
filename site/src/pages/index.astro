@@ -1,0 +1,26 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE_NAME, SITE_TAGLINE } from '../config.js';
+import { load, desc, fmtDate } from '../lib/data.js';
+const { works, episodes, years } = load();
+const eps = episodes.slice(0, 12), wks = works.slice(0, 12);
+const schema = [{ '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url: new URL('/', Astro.site).href, inLanguage: 'ar' }];
+---
+<Base title={SITE_NAME} description={SITE_TAGLINE} path="/" schema={schema}>
+  <h1>{SITE_NAME}</h1>
+  <p class="meta">{SITE_TAGLINE}</p>
+  {eps.length > 0 && <>
+    <h2>أحدث ملخصات الحلقات</h2>
+    <div class="grid">{eps.map((e) => (
+      <a class="card" href={e.path}><h3>{e.title}</h3><p>{desc(e.excerpt, 120)}</p></a>
+    ))}</div>
+  </>}
+  {wks.length > 0 && <>
+    <h2>أحدث الأعمال</h2>
+    <div class="grid">{wks.map((w) => (
+      <a class="card" href={w.path}><h3>{w.title}</h3><p>{desc(w.excerpt, 120)}</p></a>
+    ))}</div>
+  </>}
+  {years.length > 0 && <p class="meta" style="margin-top:2em">تصفّح حسب السنة: {years.map((y) => <a href={`/year/${y}/`} style="margin-inline-end:10px">{y}</a>)}</p>}
+  {eps.length + wks.length === 0 && <p>لا يوجد محتوى منشور بعد.</p>}
+</Base>

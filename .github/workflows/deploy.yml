@@ -1,0 +1,44 @@
+name: deploy-site
+on:
+  workflow_run:
+    workflows: ["elcinema-auto"]      # بعد كل دورة جلب/نشر تنجح (حتى لو كُتبت البيانات بواسطة GITHUB_TOKEN)
+    types: [completed]
+  push:
+    paths: ["site/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Build
+        working-directory: site
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_NAME: ${{ vars.SITE_NAME }}
+          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+          DISCLOSURE_LINE: ${{ vars.DISCLOSURE_LINE }}
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+          DATA_DIR: ${{ github.workspace }}/elcinema_data
+        run: npm install --no-audit --no-fund && npm run build
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site/dist --project-name=${{ vars.CF_PROJECT }}
+      - name: Notify IndexNow (Bing/Yandex)
+        working-directory: site
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: node scripts/indexnow.mjs dist 3

@@ -14,6 +14,10 @@ if (fs.existsSync('media')) {
   for (const f of fs.readdirSync('media').filter((x) => x.endsWith('.b64'))) {
     fs.writeFileSync(`public/media/${f.replace(/\.b64$/, '.jpg')}`, Buffer.from(fs.readFileSync(`media/${f}`, 'utf8').trim(), 'base64'));
   }
+  if (fs.existsSync('media/pack.json')) {
+    const pack = JSON.parse(fs.readFileSync('media/pack.json', 'utf8'));
+    for (const [k, v] of Object.entries(pack)) fs.writeFileSync(`public/media/${k}.jpg`, Buffer.from(v, 'base64'));
+  }
 }
 fs.writeFileSync('public/_redirects', lines.join('\n') + '\n');
 console.log(`redirects: ${lines.length}`);

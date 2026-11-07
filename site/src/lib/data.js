@@ -59,7 +59,13 @@ export function parseArticle(html) {
   return { spoiler, lead, sections, card, faq, note };
 }
 
-function blurb(f) {
+function blurb(f, up) {
+  if (up) {
+    const u = [`مسلسل مصري مرتقب ضمن أعمال رمضان ${f.year}`];
+    if (f.cast?.length) u.push('بطولة ' + joinAr(f.cast.slice(0, 4)));
+    if (f.directors?.length) u.push('وإخراج ' + joinAr(f.directors));
+    return u.join('، ') + '.';
+  }
   const kind = f.kind || f.category || 'عمل';
   const a = [`${kind}${f.countries?.length ? ' من إنتاج ' + joinAr(f.countries) : ''}${f.year ? ' عُرض عام ' + f.year : ''}`];
   if (f.genres?.length) a.push('من فئة ' + joinAr(f.genres));
@@ -89,11 +95,13 @@ export function load() {
     const f = item ? item.facts : eps0[eps0.length - 1].facts;
     const title = f.title;
     const slug = `${latin(f.alt_title) || slugify(title)}-${idStr(wid)}`;
+    const up = !!(item && item.upcoming);
     const s = {
+      upcoming: up, noindex: !!(item && item.noindex),
       kind: 'series', id: wid, title, alt: f.alt_title || '', slug, path: `/series/${slug}/`, facts: f,
       hue: [...title].reduce((a, c) => a + c.charCodeAt(0), 0) % 360,
       image: fs.existsSync(path.resolve('media', `${wid}.b64`)) ? `/media/${wid}.jpg` : '',
-      item, excerpt: item ? item.excerpt : blurb(f), blurb: blurb(f), episodes: [],
+      item, excerpt: (item && item.excerpt) || blurb(f, up), blurb: blurb(f, up), episodes: [],
     };
     s.episodes = eps0.map((o) => {
       const ep = o.facts.episode_no;
@@ -109,6 +117,7 @@ export function load() {
     series.push(s); episodes.push(...s.episodes);
   }
   const byDate = (a, b) => String(b.at).localeCompare(String(a.at)) || (b.ep || 0) - (a.ep || 0);
-  cache = { series: series.sort(byDate), episodes: episodes.sort(byDate) };
+  const all = series.sort(byDate);
+  cache = { series: all, episodes: episodes.sort(byDate), live: all.filter((x) => !x.upcoming), upcoming: all.filter((x) => x.upcoming) };
   return cache;
 }

@@ -190,8 +190,9 @@ def gemini_post(body: dict, model: str, key: str, session=requests) -> dict:
             r = session.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                              headers={"x-goog-api-key": key, "content-type": "application/json"}, json=body, timeout=180)
             if r.status_code in (429, 500, 502, 503, 529):
-                last = f"http {r.status_code}"
-                time.sleep(2 ** i * 3)
+                last = f"http {r.status_code}: {r.text[:300]}"
+                if i < 3:
+                    time.sleep((5, 20, 60)[i])
                 continue
             r.raise_for_status()
             return r.json()

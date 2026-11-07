@@ -1,0 +1,23 @@
+---
+import Base from '../../layouts/Base.astro';
+import EpRow from '../../components/EpRow.astro';
+import { load, num } from '../../lib/data.js';
+export function getStaticPaths({ paginate }) {
+  return paginate(load().episodes, { pageSize: 20 });
+}
+const { page } = Astro.props;
+const title = page.currentPage > 1 ? `آخر الحلقات، صفحة ${num(page.currentPage)}` : 'آخر الحلقات';
+---
+<Base title={title} description="أحدث ملخصات الحلقات من كل المسلسلات التي نتابعها." path={page.currentPage > 1 ? `/episodes/${page.currentPage}/` : '/episodes/'} active="episodes">
+  <section class="band page-head"><div class="wrap">
+    <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>الحلقات</nav>
+    <h1>آخر الحلقات</h1>
+  </div></section>
+  <div class="wrap" style="padding-top:12px">
+    {page.data.length ? <ul class="ep-list">{page.data.map((e) => <EpRow e={e} />)}</ul> : <p class="empty">لا توجد حلقات منشورة بعد.</p>}
+    {(page.url.prev || page.url.next) && <div class="pager">
+      {page.url.prev ? <a href={page.url.prev}>الصفحة السابقة</a> : <span />}
+      {page.url.next ? <a href={page.url.next}>الصفحة التالية</a> : <span />}
+    </div>}
+  </div>
+</Base>

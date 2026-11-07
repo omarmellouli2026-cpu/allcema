@@ -92,6 +92,7 @@ export function load() {
     const s = {
       kind: 'series', id: wid, title, alt: f.alt_title || '', slug, path: `/series/${slug}/`, facts: f,
       hue: [...title].reduce((a, c) => a + c.charCodeAt(0), 0) % 360,
+      image: fs.existsSync(path.resolve('media', `${wid}.b64`)) ? `/media/${wid}.jpg` : '',
       item, excerpt: item ? item.excerpt : blurb(f), blurb: blurb(f), episodes: [],
     };
     s.episodes = eps0.map((o) => {

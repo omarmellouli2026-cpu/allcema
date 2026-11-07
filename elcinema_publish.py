@@ -105,6 +105,19 @@ def open_db(data_dir: str) -> sqlite3.Connection:
     return c
 
 
+def scope_sql(args, alias: str = "") -> tuple[str, list]:
+    """شرط SQL يحصر ما يُرسَل إلى LLM (للتحكم بالتكلفة): مسلسلات + بلد إنتاج محدد.
+    الاستدعاء البرمجي بلا هذه الخيارات لا يُفلتَر (توافق مع الاختبارات)."""
+    p = f"{alias}." if alias else ""
+    sql, params = "", []
+    if getattr(args, "only_series", False):
+        sql += f" AND {p}is_series=1"
+    for cn in [x.strip() for x in (getattr(args, "countries", "") or "").split(",") if x.strip()]:
+        sql += f" AND {p}countries LIKE ?"
+        params.append(f"%{cn}%")
+    return sql, params
+
+
 def build_facts(c: sqlite3.Connection, wid: int, min_year: int) -> tuple[dict, str]:
     """يعيد (حقائق وقائعية قابلة للنشر، نص المصدر الخاص الذي يُقارَن به ولا يُنشر)."""
     w = dict(c.execute("SELECT * FROM works WHERE work_id=?", (wid,)).fetchone())
@@ -362,9 +375,11 @@ def run(args, llm=call_llm, session=None) -> dict:
     if args.template_only:
         args.status = "draft"                      # صفحة وقائعية رقيقة: لا تُنشر علنًا أبدًا
     st = dict(generated=0, published=0, held=0, errors=0, skipped=0)
+    scope, sp = scope_sql(args)
     ids = [r["work_id"] for r in db.execute(
-        "SELECT work_id FROM works WHERE year>=? " + ("AND year<=? " if args.max_year else "") +
-        "ORDER BY first_seen_at DESC, work_id DESC", (args.min_year, args.max_year) if args.max_year else (args.min_year,))]
+        "SELECT work_id FROM works WHERE year>=? " + ("AND year<=? " if args.max_year else "") + scope +
+        " ORDER BY first_seen_at DESC, work_id DESC",
+        ((args.min_year, args.max_year) if args.max_year else (args.min_year,)) + tuple(sp))]
     for wid in ids:
         if st["generated"] >= args.limit and st["published"] >= args.limit:
             break
@@ -450,6 +465,9 @@ def main(argv=None) -> int:
     r.add_argument("--no-publish", action="store_true", help="حوّل وافحص فقط دون نشر")
     r.add_argument("--template-only", action="store_true", help="بلا LLM: صفحة وقائعية، مسودة فقط")
     r.add_argument("--sleep", type=float, default=1.0)
+    r.add_argument("--only-series", action=argparse.BooleanOptionalAction, default=True,
+                   help="مسلسلات فقط (افتراضي)؛ --no-only-series لتشمل الأفلام")
+    r.add_argument("--countries", default="مصر", help="بلد/بلدان الإنتاج المسموحة مفصولة بفاصلة؛ فارغ = كل البلدان")
     s = sub.add_parser("status")
     s.add_argument("--data-dir", default="elcinema_data")
     a = ap.parse_args(argv)

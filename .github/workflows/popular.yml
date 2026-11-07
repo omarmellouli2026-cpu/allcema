@@ -1,0 +1,55 @@
+name: popular-series
+# مسلسلات مصرية الأكثر بحثًا ومشاهدة (ترشيح Gemini، وتحقّقنا من وجودها على elcinema):
+# 2096455 علي كلاي | 2096453 اتنين غيرنا | 2096591 عين سحرية | 2097153 صحاب الأرض | 2098035 عنبر الموت (يُعرض 26 نوفمبر 2026)
+on:
+  schedule:
+    - cron: "47 */3 * * *"
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: elcinema work ids (space separated)
+        default: "2096455 2096453 2096591 2097153 2098035"
+      limit:
+        description: max episodes this run
+        default: "3"
+
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+
+jobs:
+  popular:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      UA: elcinema-licensed-sync (${{ github.repository_owner }})
+      IDS: ${{ inputs.ids || '2096455 2096453 2096591 2097153 2098035' }}
+      LLM_PROVIDER: deepseek
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Refresh the series pages from elcinema
+        run: python elcinema_scraper.py fetch --ids $IDS --refresh --data-dir elcinema_data --user-agent "$UA"
+      - name: Research and publish new episode recaps
+        run: >
+          python elcinema_recaps.py --data-dir elcinema_data --work-ids $IDS --expect-episodes
+          --retry-held-hours 5 --limit ${{ inputs.limit || 3 }} --daily-cap 12 --target jsonl
+          --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"
+      - name: Save data to repo
+        if: always()
+        run: |
+          git config user.name "elcinema-bot"; git config user.email "bot@users.noreply.github.com"
+          python - <<'PY'
+          import glob, sqlite3
+          for p in glob.glob("elcinema_data/*.sqlite"):
+              c = sqlite3.connect(p); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()
+          PY
+          git add -A elcinema_data
+          git diff --cached --quiet || (git commit -m "recaps: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

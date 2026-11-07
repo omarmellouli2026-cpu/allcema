@@ -295,7 +295,13 @@ def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
             if st["researched"] >= args.limit or cap_hit:
                 continue
             st["researched"] += 1
-            res = research_fn(facts["title"], facts.get("year"), ep, summary, key, session)
+            try:
+                res = research_fn(facts["title"], facts.get("year"), ep, summary, key, session)
+            except RuntimeError as e:      # حصة/تعطل الـAPI: نتوقف بهدوء دون إفشال التشغيل ولا حرق دقائق
+                print(f"توقف البحث في هذه الدورة: {e}")
+                st["researched"] -= 1
+                st["api_stopped"] = 1
+                break
             events = verified_events(res, args.min_sources)
             notes = ""
             if len(events) < args.min_events and len(summary) < 120:

@@ -24,7 +24,7 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Hourly update
         if: github.event.schedule != '40 3 * * *'
-        run: python elcinema_scraper.py update --data-dir elcinema_data --sitemap --probe-misses 100 --user-agent "$UA"
+        run: python elcinema_scraper.py update --data-dir elcinema_data --sitemap --probe-misses 100 --max-new 60 --user-agent "$UA"
       - name: Transform to original content and publish
         if: github.event.schedule != '40 3 * * *'
         env:

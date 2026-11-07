@@ -1,0 +1,46 @@
+name: track-talea-nazel
+# مراقبة مسلسل «طالع نازل» (elcinema 2100300) فقط: كل بضع ساعات يبحث عن حلقة جديدة وينشر تلخيصها
+on:
+  schedule:
+    - cron: "23 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      UA: elcinema-licensed-sync (${{ github.repository_owner }})
+      LLM_PROVIDER: deepseek
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Refresh the series page from elcinema
+        run: python elcinema_scraper.py fetch --ids 2100300 --refresh --data-dir elcinema_data --user-agent "$UA"
+      - name: Research and publish new episode recaps
+        run: >
+          python elcinema_recaps.py --data-dir elcinema_data --work-ids 2100300 --expect-episodes
+          --retry-held-hours 5 --limit 3 --daily-cap 12 --target jsonl
+          --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"
+      - name: Save data to repo
+        if: always()
+        run: |
+          git config user.name "elcinema-bot"; git config user.email "bot@users.noreply.github.com"
+          python - <<'PY'
+          import glob, sqlite3
+          for p in glob.glob("elcinema_data/*.sqlite"):
+              c = sqlite3.connect(p); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()
+          PY
+          git add -A elcinema_data
+          git diff --cached --quiet || (git commit -m "recaps: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

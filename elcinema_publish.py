@@ -148,7 +148,28 @@ def build_facts(c: sqlite3.Connection, wid: int, min_year: int) -> tuple[dict, s
         "related": [{"title": r["title_ar"], "url": r["remote_url"]} for r in related],
     }
     eps = [r["summary"] for r in c.execute("SELECT summary FROM episodes WHERE work_id=? ORDER BY episode_no", (wid,)) if r["summary"]]
-    source = " ".join([w.get("synopsis") or ""] + eps)
+    extra_syn = ""
+    try:                                   # معلومات بحث الذكاء الاصطناعي تملأ الفراغ فقط ولا تستبدل بيانات elcinema
+        g = c.execute("SELECT data FROM gemini_facts WHERE work_id=?", (wid,)).fetchone()
+        gd = json.loads(g["data"]) if g and g["data"] else {}
+        if not isinstance(gd, dict):
+            gd = {}
+        ex = json.loads(w.get("extra") or "{}") if str(w.get("extra") or "").startswith("{") else {}
+        if not isinstance(ex, dict):
+            ex = {}
+    except (sqlite3.Error, ValueError):
+        gd, ex = {}, {}
+    if gd.get("cast") and not facts["cast"]:
+        facts["cast"] = [str(x) for x in gd["cast"]][:10]
+    if gd.get("director") and not facts["directors"]:
+        facts["directors"] = [str(gd["director"])]
+    if gd.get("writer") and not facts["writers"]:
+        facts["writers"] = [str(gd["writer"])]
+    plat = gd.get("platform") or ex.get("platform")
+    if plat:
+        facts["platform"] = str(plat)
+    extra_syn = gd.get("synopsis") or ""
+    source = " ".join([w.get("synopsis") or "", extra_syn] + eps)
     return facts, source
 
 
@@ -374,7 +395,8 @@ def render_html(a: dict, f: dict, credit: str = "") -> str:
     rows = [("النوع", f["kind"]), ("سنة الإنتاج", f.get("year")), ("التصنيف", "، ".join(f["genres"])),
             ("الإخراج", "، ".join(f["directors"])), ("التأليف", "، ".join(f["writers"])),
             ("البطولة", "، ".join(f["cast"])), ("بلد الإنتاج", "، ".join(f["countries"])),
-            ("المدة (دقيقة)", f.get("duration_min")), ("عدد الحلقات", f.get("episodes_count"))]
+            ("المدة (دقيقة)", f.get("duration_min")), ("عدد الحلقات", f.get("episodes_count")),
+            ("جهة العرض المعلنة", f.get("platform"))]
     rows = [(k, v) for k, v in rows if v not in (None, "", [])]
     if rows:
         out.append("<h2>بطاقة العمل</h2><table>" + "".join(f"<tr><th>{e(k)}</th><td>{e(v)}</td></tr>" for k, v in rows) + "</table>")

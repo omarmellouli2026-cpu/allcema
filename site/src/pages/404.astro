@@ -1,4 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 ---
-<Base title="الصفحة غير موجودة" path="/404/" noindex={true}><h1>الصفحة غير موجودة</h1><p><a href="/">العودة إلى الرئيسية</a></p></Base>
+<Base title="الصفحة غير موجودة" path="/404/" noindex={true}>
+  <section class="band page-head"><div class="wrap"><h1>الصفحة غير موجودة</h1></div></section>
+  <div class="wrap"><div class="plain"><p>قد يكون الرابط قديمًا أو مكتوبًا بخطأ. جرّب <a href="/search/" style="color:var(--sig);font-weight:600">البحث</a> أو ارجع إلى <a href="/" style="color:var(--sig);font-weight:600">الرئيسية</a>.</p></div></div>
+</Base>

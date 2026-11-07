@@ -179,8 +179,8 @@ def llm_config() -> tuple[str, str | None, str]:
     if not prov:
         prov = "gemini" if os.environ.get("GEMINI_API_KEY") and not os.environ.get("ANTHROPIC_API_KEY") else "anthropic"
     if prov == "gemini":
-        return prov, os.environ.get("GEMINI_API_KEY"), os.environ.get("GEMINI_MODEL", GEMINI_MODEL)
-    return "anthropic", os.environ.get("ANTHROPIC_API_KEY"), os.environ.get("ANTHROPIC_MODEL", DEFAULT_MODEL)
+        return prov, os.environ.get("GEMINI_API_KEY"), os.environ.get("GEMINI_MODEL") or GEMINI_MODEL
+    return "anthropic", os.environ.get("ANTHROPIC_API_KEY"), os.environ.get("ANTHROPIC_MODEL") or DEFAULT_MODEL
 
 
 def gemini_post(body: dict, model: str, key: str, session=requests) -> dict:

@@ -169,7 +169,54 @@ overview (3 فقرات عن القصة والأجواء 150-260 كلمة، بف�
 highlights (قائمة 3-5 نقاط قصيرة: لماذا يستحق الاهتمام)، faq (قائمة 3 عناصر {q,a} تُجاب من الحقائق فقط)."""
 
 
+GEMINI_MODEL = "gemini-3.5-flash"
+
+
+def llm_config() -> tuple[str, str | None, str]:
+    """(المزوّد، المفتاح، النموذج). LLM_PROVIDER=gemini|anthropic؛ وإن لم يُحدَّد: gemini
+    عند وجود GEMINI_API_KEY وغياب ANTHROPIC_API_KEY، وإلا anthropic."""
+    prov = (os.environ.get("LLM_PROVIDER") or "").strip().lower()
+    if not prov:
+        prov = "gemini" if os.environ.get("GEMINI_API_KEY") and not os.environ.get("ANTHROPIC_API_KEY") else "anthropic"
+    if prov == "gemini":
+        return prov, os.environ.get("GEMINI_API_KEY"), os.environ.get("GEMINI_MODEL", GEMINI_MODEL)
+    return "anthropic", os.environ.get("ANTHROPIC_API_KEY"), os.environ.get("ANTHROPIC_MODEL", DEFAULT_MODEL)
+
+
+def gemini_post(body: dict, model: str, key: str, session=requests) -> dict:
+    last = None
+    for i in range(4):
+        try:
+            r = session.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                             headers={"x-goog-api-key": key, "content-type": "application/json"}, json=body, timeout=180)
+            if r.status_code in (429, 500, 502, 503, 529):
+                last = f"http {r.status_code}"
+                time.sleep(2 ** i * 3)
+                continue
+            r.raise_for_status()
+            return r.json()
+        except requests.RequestException as e:
+            last = str(e)
+            time.sleep(2 ** i * 3)
+    raise RuntimeError(f"Gemini failed: {last}")
+
+
+def gemini_text(j: dict) -> str:
+    c = (j.get("candidates") or [{}])[0]
+    return "".join(p.get("text", "") for p in ((c.get("content") or {}).get("parts") or []) if not p.get("thought"))
+
+
+def call_gemini(system: str, user: str, model: str, key: str, session=requests) -> str:
+    j = gemini_post({"systemInstruction": {"parts": [{"text": system}]},
+                     "contents": [{"role": "user", "parts": [{"text": user}]}],
+                     "generationConfig": {"maxOutputTokens": 4096, "responseMimeType": "application/json"}},
+                    model, key, session)
+    return gemini_text(j)
+
+
 def call_llm(system: str, user: str, model: str, key: str, session=requests) -> str:
+    if llm_config()[0] == "gemini":
+        return call_gemini(system, user, model, key, session)
     last = None
     for i in range(4):
         try:
@@ -256,10 +303,9 @@ def generate(facts: dict, source: str, args, llm) -> tuple[dict | None, str]:
         a = template_article(facts)
         why = gate(a, "", facts, 15)
         return (None, "؛ ".join(why)) if why else (a, "template-only")
-    key = os.environ.get("ANTHROPIC_API_KEY")
+    prov, key, model = llm_config()
     if not key:
-        raise SystemExit("ANTHROPIC_API_KEY غير مضبوط (أو استخدم --template-only)")
-    model = os.environ.get("ANTHROPIC_MODEL", DEFAULT_MODEL)
+        raise SystemExit(f"مفتاح {prov} غير مضبوط (ANTHROPIC_API_KEY أو GEMINI_API_KEY) أو استخدم --template-only")
     pub_facts = {k: v for k, v in facts.items() if k not in ("work_id", "related") and v not in (None, [], "")}
     user = ("الحقائق (JSON):\n" + json.dumps(pub_facts, ensure_ascii=False) +
             "\n\nالملخص المصدر (للفهم فقط — ممنوع النسخ منه):\n" + (source[:4000] or "(لا يوجد)"))

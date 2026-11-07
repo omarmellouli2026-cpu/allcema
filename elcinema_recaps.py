@@ -74,18 +74,26 @@ def api_post(body: dict, key: str, session=requests) -> dict:
 
 
 RESEARCH_SYS = """أنت باحث دراما. ابحث في الويب العربي عن أحداث حلقة محددة من مسلسل، واستخرج حقائق الحلقة فقط.
-أعد JSON فقط: {"events":[{"fact":"حدث واحد محدد بجملة قصيرة بصياغتك","sources":["نطاق الموقع","نطاق آخر"]}]}
-- لا تنقل جملًا حرفية. لا تضف حدثًا لم تجده في نتائج البحث. اذكر نطاقات المواقع التي وجدت فيها الحدث فعلًا."""
+أعد JSON فقط: {"events":[{"fact":"حدث واحد محدد بجملة قصيرة بصياغتك","sources":["نطاق الموقع","نطاق آخر"]}],
+"watch":{"platform":"اسم المنصة أو القناة الرسمية التي يُعرض عليها المسلسل","sources":["نطاق الموقع"]}}
+- لا تنقل جملًا حرفية. لا تضف حدثًا لم تجده في نتائج البحث. اذكر نطاقات المواقع التي وجدت فيها الحدث فعلًا.
+- watch اختياري: أضفه فقط إن وجدت في نتائج البحث اسم المنصة أو القناة الرسمية للعرض؛ وإلا احذفه ولا تخمّن."""
 
 
-def _parse_events(raw: str) -> list:
+def _parse_obj(raw: str) -> dict:
     a, z = raw.find("{"), raw.rfind("}")
     if a >= 0 and z > a:
         try:
-            return json.loads(raw[a:z + 1]).get("events", [])
+            d = json.loads(raw[a:z + 1])
+            return d if isinstance(d, dict) else {}
         except json.JSONDecodeError:
-            return []
-    return []
+            return {}
+    return {}
+
+
+def _parse_events(raw: str) -> list:
+    ev = _parse_obj(raw).get("events", [])
+    return ev if isinstance(ev, list) else []
 
 
 def chunk_label(web: dict) -> str:
@@ -107,7 +115,9 @@ def research_gemini(user: str, session=requests) -> dict:
     domains = {chunk_label(ch.get("web") or {}) for ch in gm.get("groundingChunks") or [] if ch.get("web")}
     domains.discard("")
     # لا نص مصدر حرفي من Gemini؛ المقارنة ضد النسخ تتم على ملخص elcinema فقط
-    return {"events": _parse_events(P.gemini_text(j)), "domains": domains, "cited": ""}
+    obj = _parse_obj(P.gemini_text(j))
+    return {"events": obj.get("events") if isinstance(obj.get("events"), list) else [], "watch": obj.get("watch"),
+            "domains": domains, "cited": ""}
 
 
 def research(title: str, year, ep: int, summary: str, key: str, session=requests) -> dict:
@@ -136,14 +146,9 @@ def research(title: str, year, ep: int, summary: str, key: str, session=requests
                 if r.get("url"):
                     domains.add(domain(r["url"]))
     raw = "".join(texts)
-    a, z = raw.find("{"), raw.rfind("}")
-    events = []
-    if a >= 0 and z > a:
-        try:
-            events = json.loads(raw[a:z + 1]).get("events", [])
-        except json.JSONDecodeError:
-            events = []
-    return {"events": events, "domains": domains, "cited": " ".join(cited)}
+    obj = _parse_obj(raw)
+    return {"events": obj.get("events") if isinstance(obj.get("events"), list) else [], "watch": obj.get("watch"),
+            "domains": domains, "cited": " ".join(cited)}
 
 
 def verified_events(res: dict, min_sources: int) -> list[str]:
@@ -157,6 +162,20 @@ def verified_events(res: dict, min_sources: int) -> list[str]:
         if len(doms) >= min_sources:
             out.append(str(ev["fact"]).strip())
     return out
+
+
+def verified_watch(res: dict) -> str | None:
+    """اسم منصة/قناة العرض: يُعتمد فقط إن كان مصدره نطاقًا موجودًا فعلًا في نتائج البحث."""
+    w = res.get("watch")
+    if not isinstance(w, dict):
+        return None
+    name = re.sub(r"\s+", " ", str(w.get("platform") or "")).strip()
+    if not name or len(name) > 40 or re.search(r"https?:|www\.|\.com|\.net|[<>{}\[\]]", name, re.I):
+        return None
+    doms = {domain(str(x)) for x in (w.get("sources") or [])}
+    if not {d for d in doms if d in res["domains"] and "elcinema" not in d}:
+        return None
+    return name
 
 
 # ───────────────────────── الكتابة والبوابة ─────────────────────────
@@ -180,19 +199,22 @@ def seo_headline(title: str, ep: int) -> str:
     return f"مسلسل {title} حلقة {ep} وأبرز ما حدث"
 
 
-def where_to_watch(facts: dict, ep: int) -> dict | None:
+def where_to_watch(facts: dict, ep: int, platform: str | None = None) -> dict | None:
     """سؤال «أين تشاهد؟» من بيانات البث الفعلية فقط (قنوات من جدول البث). لا بيانات = لا سؤال، ولا تخمين."""
     chans = []
     for a in facts.get("tv_airings") or []:
         c = (a.get("channel") or "").strip()
         if c and c not in chans:
             chans.append(c)
-    if not chans:
+    if not chans and not platform:
         return None
-    names = " و".join(f"قناة {c}" for c in chans[:2])
+    parts = []
+    if chans:
+        parts.append("يُعرض مسلسل %s على %s بحسب جدول البث المعلن" % (facts["title"], " و".join(f"قناة {c}" for c in chans[:2])))
+    if platform and not any(platform.lower() in c.lower() for c in chans):
+        parts.append(("ويمكن متابعته أيضًا عبر %s" if chans else "يُعرض مسلسل " + facts["title"] + " عبر %s") % platform)
     return {"q": f"أين أشاهد مسلسل {facts['title']} الحلقة {ep}؟",
-            "a": f"يُعرض مسلسل {facts['title']} على {names} بحسب جدول البث المعلن، وقد تتغير المواعيد، "
-                 "فالأفضل التأكد من جدول القناة قبل الموعد."}
+            "a": "، ".join(parts) + ". وقد تتغير المواعيد والمنصات، فالأفضل التأكد من الجهة المعلنة قبل الموعد."}
 
 
 def cliche_count(txt: str) -> int:
@@ -299,7 +321,7 @@ def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
                 print(f"✗ {facts['title']} ح{ep} محجوزة: {notes}")
                 continue
             art["headline"] = seo_headline(facts["title"], ep)      # عنوان ثابت يطابق نية البحث
-            where = where_to_watch(facts, ep)
+            where = where_to_watch(facts, ep, verified_watch(res))
             if where:
                 art["faq"] = [where] + [x for x in art.get("faq", []) if x.get("q") != where["q"]]
             op = " ".join(P.words(art["intro"])[:6])

@@ -1,0 +1,4 @@
+---
+const { eps, current = null } = Astro.props;
+---
+<ol class="strip" aria-label="حلقات المسلسل">{eps.map((x) => <li><a href={x.path} aria-label={`الحلقة ${x.ep}`} aria-current={current === x ? 'page' : undefined}>{x.numeral}</a></li>)}</ol>

@@ -1,6 +1,7 @@
 ---
 import Base from '../../../layouts/Base.astro';
 import Strip from '../../../components/Strip.astro';
+import EpRow from '../../../components/EpRow.astro';
 import Tile from '../../../components/Tile.astro';
 import { load, desc, fmtDate, minutes } from '../../../lib/data.js';
 export function getStaticPaths() {
@@ -9,6 +10,8 @@ export function getStaticPaths() {
 const { e } = Astro.props;
 const s = e.series, p = e.parsed;
 const others = load().series.filter((x) => x !== s).slice(0, 4);
+const first = s.episodes[0], last = s.latest;
+const near = s.episodes.filter((x) => x !== e).sort((a, b) => Math.abs(a.ep - e.ep) - Math.abs(b.ep - e.ep) || a.ep - b.ep).slice(0, 3);
 const abs = (x) => new URL(x, Astro.site).href;
 const crumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
   { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: abs('/') }, { '@type': 'ListItem', position: 2, name: 'المسلسلات', item: abs('/series/') },
@@ -17,6 +20,8 @@ const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage
   acceptedAnswer: { '@type': 'Answer', text: x.a } })) } : null;
 ---
 <Base title={e.title} description={desc(e.excerpt)} path={e.path} schema={[e.schema, crumbs, ...(faq ? [faq] : [])]} type="article" active="series">
+  {e.prev && <link slot="head" rel="prev" href={abs(e.prev.path)} />}
+  {e.next && <link slot="head" rel="next" href={abs(e.next.path)} />}
   <section class="band page-head"><div class="wrap">
     <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span><a href="/series/">المسلسلات</a><span>/</span><a href={s.path}>{s.title}</a><span>/</span>الحلقة {e.ep}</nav>
     <div class="ph-grid">
@@ -46,8 +51,15 @@ const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage
     </article>
     <aside>
       {p.card.length > 0 && <div class="box"><h2>بطاقة العمل</h2><dl class="card">{p.card.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}</dl></div>}
-      <div class="box"><h2>مسلسل {s.title}</h2><a class="go" href={s.path}>كل ملخصات الحلقات</a></div>
+      <div class="box"><h2>تنقل سريع</h2><ul class="qn">
+        {first && first !== e && <li><a href={first.path}>ابدأ من الحلقة {first.numeral}</a></li>}
+        {e.prev && <li><a href={e.prev.path}>الحلقة السابقة: {e.prev.numeral}</a></li>}
+        {e.next && <li><a href={e.next.path}>الحلقة التالية: {e.next.numeral}</a></li>}
+        {last && last !== e && last !== e.next && <li><a href={last.path}>أحدث حلقة: {last.numeral}</a></li>}
+        <li><a href={s.path}>كل ملخصات مسلسل {s.title}</a></li>
+      </ul></div>
     </aside>
   </div>
+  {near.length > 0 && <div class="wrap"><section class="section"><div class="sec-head"><h2>حلقات أخرى من مسلسل {s.title}</h2><a href={s.path}>كل الحلقات</a></div><ul class="ep-list">{near.map((x) => <EpRow e={x} showSeries={false} />)}</ul></section></div>}
   {others.length > 0 && <div class="wrap"><section class="section"><div class="sec-head"><h2>مسلسلات أخرى</h2><a href="/series/">كل المسلسلات</a></div><div class="tiles">{others.map((x) => <Tile s={x} />)}</div></section></div>}
 </Base>

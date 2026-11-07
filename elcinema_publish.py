@@ -170,14 +170,18 @@ highlights (قائمة 3-5 نقاط قصيرة: لماذا يستحق الاهت
 
 
 GEMINI_MODEL = "gemini-3.5-flash"
+DEEPSEEK_MODEL = "deepseek-flash"
+DEEPSEEK_URL = "https://api.deepseek.com"
 
 
 def llm_config() -> tuple[str, str | None, str]:
-    """(المزوّد، المفتاح، النموذج). LLM_PROVIDER=gemini|anthropic؛ وإن لم يُحدَّد: gemini
+    """(المزوّد، المفتاح، النموذج). LLM_PROVIDER=deepseek|gemini|anthropic؛ وإن لم يُحدَّد: gemini
     عند وجود GEMINI_API_KEY وغياب ANTHROPIC_API_KEY، وإلا anthropic."""
     prov = (os.environ.get("LLM_PROVIDER") or "").strip().lower()
     if not prov:
         prov = "gemini" if os.environ.get("GEMINI_API_KEY") and not os.environ.get("ANTHROPIC_API_KEY") else "anthropic"
+    if prov == "deepseek":
+        return prov, os.environ.get("DEEPSEEK_API_KEY"), os.environ.get("DEEPSEEK_MODEL") or DEEPSEEK_MODEL
     if prov == "gemini":
         return prov, os.environ.get("GEMINI_API_KEY"), os.environ.get("GEMINI_MODEL") or GEMINI_MODEL
     return "anthropic", os.environ.get("ANTHROPIC_API_KEY"), os.environ.get("ANTHROPIC_MODEL") or DEFAULT_MODEL
@@ -215,7 +219,41 @@ def call_gemini(system: str, user: str, model: str, key: str, session=requests) 
     return gemini_text(j)
 
 
+def deepseek_post(path: str, body: dict, key: str, session=requests) -> dict:
+    """طلب إلى DeepSeek (متوافق مع OpenAI). إعادة محاولة قصيرة؛ 429/5xx تُعاد ثم يُرفع خطأ يوقف الدورة بهدوء."""
+    last = None
+    for i in range(4):
+        try:
+            r = session.post(f"{DEEPSEEK_URL}{path}", json=body, timeout=180,
+                             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+            if r.status_code in (429, 500, 502, 503, 504):
+                last = f"http {r.status_code}: {r.text[:300]}"
+                if i < 3:
+                    time.sleep((3, 10, 30)[i])
+                continue
+            r.raise_for_status()
+            return r.json()
+        except requests.RequestException as e:
+            last = str(e)
+            time.sleep(2 ** i * 3)
+    raise RuntimeError(f"DeepSeek failed: {last}")
+
+
+def deepseek_text(j: dict) -> str:
+    return (((j.get("choices") or [{}])[0].get("message") or {}).get("content")) or ""
+
+
+def call_deepseek(system: str, user: str, model: str, key: str, session=requests) -> str:
+    j = deepseek_post("/chat/completions", {
+        "model": model, "max_tokens": 4096, "stream": False,
+        "response_format": {"type": "json_object"},
+        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}, key, session)
+    return deepseek_text(j)
+
+
 def call_llm(system: str, user: str, model: str, key: str, session=requests) -> str:
+    if llm_config()[0] == "deepseek":
+        return call_deepseek(system, user, model, key, session)
     if llm_config()[0] == "gemini":
         return call_gemini(system, user, model, key, session)
     last = None
@@ -306,7 +344,7 @@ def generate(facts: dict, source: str, args, llm) -> tuple[dict | None, str]:
         return (None, "؛ ".join(why)) if why else (a, "template-only")
     prov, key, model = llm_config()
     if not key:
-        raise SystemExit(f"مفتاح {prov} غير مضبوط (ANTHROPIC_API_KEY أو GEMINI_API_KEY) أو استخدم --template-only")
+        raise SystemExit(f"مفتاح {prov} غير مضبوط (ANTHROPIC_API_KEY أو GEMINI_API_KEY أو DEEPSEEK_API_KEY) أو استخدم --template-only")
     pub_facts = {k: v for k, v in facts.items() if k not in ("work_id", "related") and v not in (None, [], "")}
     user = ("الحقائق (JSON):\n" + json.dumps(pub_facts, ensure_ascii=False) +
             "\n\nالملخص المصدر (للفهم فقط — ممنوع النسخ منه):\n" + (source[:4000] or "(لا يوجد)"))

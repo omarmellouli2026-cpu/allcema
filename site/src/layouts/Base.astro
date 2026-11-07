@@ -7,6 +7,8 @@ import '@fontsource/noto-naskh-arabic/arabic-400.css';
 import '@fontsource/noto-naskh-arabic/arabic-600.css';
 import '../styles/site.css';
 import { SITE_NAME, SITE_TAGLINE, DISCLOSURE } from '../config.js';
+import { load } from '../lib/data.js';
+const footSeries = load().series.slice(0, 6);
 const { title, description = SITE_TAGLINE, path = '/', schema = [], noindex = false, type = 'website', active = '', image = '' } = Astro.props;
 const imgUrl = image ? new URL(image, Astro.site).href : '';
 const url = new URL(path, Astro.site).href;
@@ -32,6 +34,7 @@ const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المس
   <meta name="twitter:card" content={imgUrl ? 'summary_large_image' : 'summary'} />
   <link rel="alternate" type="application/rss+xml" title={SITE_NAME} href="/rss.xml" />
   <meta name="theme-color" content="#1c2140" />
+  <slot name="head" />
   {schema.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
 </head>
 <body>
@@ -44,6 +47,7 @@ const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المس
     <div class="foot-grid">
       <div><b>{SITE_NAME}</b>{SITE_TAGLINE}. نكتب كل ملخص بصياغتنا، ونعتمد فيه على مصادر منشورة، ونضع تنبيه الحرق في أوله.</div>
       <nav aria-label="روابط التذييل"><b>الموقع</b><a href="/series/">المسلسلات</a><a href="/episodes/">الحلقات</a><a href="/about/">من نحن</a><a href="/privacy/">الخصوصية</a><a href="/contact/">اتصل بنا</a><a href="/rss.xml">RSS</a></nav>
+      {footSeries.length > 0 && <nav aria-label="المسلسلات"><b>المسلسلات</b>{footSeries.map((x) => <a href={x.path}>{x.title}</a>)}</nav>}
     </div>
     <small>{DISCLOSURE && <>{DISCLOSURE} </>}© {new Date().getFullYear()} {SITE_NAME}</small>
   </div></footer>

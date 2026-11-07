@@ -21,7 +21,7 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'TVSeries', name: s
     { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: abs('/') }, { '@type': 'ListItem', position: 2, name: 'المسلسلات', item: abs('/series/') },
     { '@type': 'ListItem', position: 3, name: s.title, item: abs(s.path) }] }];
 ---
-<Base title={`مسلسل ${s.title}: ملخصات كل الحلقات`} description={s.blurb} path={s.path} schema={schema} active="series" image={s.image}>
+<Base title={s.upcoming ? `مسلسل ${s.title} رمضان ${f.year}: ما نعرفه حتى الآن` : `مسلسل ${s.title}: ملخصات كل الحلقات`} description={s.blurb} path={s.path} schema={schema} active="series" image={s.image} noindex={s.noindex}>
   <section class="band page-head"><div class="wrap">
     <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span><a href="/series/">المسلسلات</a><span>/</span>{s.title}</nav>
     <div class="ph-grid">
@@ -37,12 +37,12 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'TVSeries', name: s
   </div></section>
   <div class="wrap ep-layout">
     <div>
-      <div class="sec-head"><h2>ملخصات الحلقات ({num(s.count)})</h2></div>
-      {s.count ? <ul class="ep-list">{desc.map((e) => <EpRow e={e} showSeries={false} />)}</ul> : <p class="empty">لا توجد ملخصات منشورة لهذا المسلسل بعد.</p>}
+      <div class="sec-head"><h2>ملخصات الحلقات{s.count ? ` (${num(s.count)})` : ''}</h2></div>
+      {s.count ? <ul class="ep-list">{desc.map((e) => <EpRow e={e} showSeries={false} />)}</ul> : <p class="empty">{s.upcoming ? `المسلسل من أعمال رمضان ${f.year} المعلنة ولم يبدأ عرضه بعد. ننشر ملخص كل حلقة بعد عرضها.` : 'لا توجد ملخصات منشورة لهذا المسلسل بعد.'}</p>}
     </div>
     <aside>
       <div class="box"><h2>عن المسلسل</h2><p style="margin:0 0 10px;font-size:.97rem;line-height:1.9">{s.blurb}</p>
-        <dl class="card">{rows.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}</dl></div>
+        <dl class="card">{rows.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}</dl>{s.upcoming && <p class="img-cap">المعلومات من تقارير صحفية منشورة عن أعمال رمضان {f.year}، وقد تتغير قبل العرض.</p>}</div>
     </aside>
   </div>
 </Base>

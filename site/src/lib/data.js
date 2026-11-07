@@ -11,6 +11,8 @@ export const slugify = (s) =>
     .replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'x';
 const latin = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const idStr = (n) => (n < 0 ? `g${-n}` : String(n));
+// رسوم الذكاء الاصطناعي لأعمال رمضان: media/pack.json = { g2027001: base64, ... }
+const PACK = (() => { try { return JSON.parse(fs.readFileSync(path.resolve('media', 'pack.json'), 'utf8')); } catch { return {}; } })();
 const strip = (h) => String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
 function readJsonl(file) {
@@ -100,7 +102,8 @@ export function load() {
       upcoming: up, noindex: !!(item && item.noindex),
       kind: 'series', id: wid, title, alt: f.alt_title || '', slug, path: `/series/${slug}/`, facts: f,
       hue: [...title].reduce((a, c) => a + c.charCodeAt(0), 0) % 360,
-      image: fs.existsSync(path.resolve('media', `${wid}.b64`)) ? `/media/${wid}.jpg` : '',
+      image: fs.existsSync(path.resolve('media', `${wid}.b64`)) ? `/media/${wid}.jpg` : PACK[idStr(wid)] ? `/media/${idStr(wid)}.jpg` : '',
+      art: !fs.existsSync(path.resolve('media', `${wid}.b64`)) && !!PACK[idStr(wid)],
       item, excerpt: (item && item.excerpt) || blurb(f, up), blurb: blurb(f, up), episodes: [],
     };
     s.episodes = eps0.map((o) => {

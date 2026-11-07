@@ -180,6 +180,21 @@ def seo_headline(title: str, ep: int) -> str:
     return f"مسلسل {title} حلقة {ep} وأبرز ما حدث"
 
 
+def where_to_watch(facts: dict, ep: int) -> dict | None:
+    """سؤال «أين تشاهد؟» من بيانات البث الفعلية فقط (قنوات من جدول البث). لا بيانات = لا سؤال، ولا تخمين."""
+    chans = []
+    for a in facts.get("tv_airings") or []:
+        c = (a.get("channel") or "").strip()
+        if c and c not in chans:
+            chans.append(c)
+    if not chans:
+        return None
+    names = " و".join(f"قناة {c}" for c in chans[:2])
+    return {"q": f"أين أشاهد مسلسل {facts['title']} الحلقة {ep}؟",
+            "a": f"يُعرض مسلسل {facts['title']} على {names} بحسب جدول البث المعلن، وقد تتغير المواعيد، "
+                 "فالأفضل التأكد من جدول القناة قبل الموعد."}
+
+
 def cliche_count(txt: str) -> int:
     return sum(txt.count(c) for c in CLICHES)
 
@@ -284,6 +299,9 @@ def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
                 print(f"✗ {facts['title']} ح{ep} محجوزة: {notes}")
                 continue
             art["headline"] = seo_headline(facts["title"], ep)      # عنوان ثابت يطابق نية البحث
+            where = where_to_watch(facts, ep)
+            if where:
+                art["faq"] = [where] + [x for x in art.get("faq", []) if x.get("q") != where["q"]]
             op = " ".join(P.words(art["intro"])[:6])
             openings.add(op)
             db.execute("""INSERT INTO recap_items(work_id,episode_no,state,facts_hash,article,opening,notes,updated_at) VALUES(?,?,?,?,?,?,?,?)

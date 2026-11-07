@@ -29,7 +29,7 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'TVSeries', name: s
         <h1>مسلسل {s.title}</h1>
         {s.alt && <div class="alt" lang="en">{s.alt}</div>}
         <ul class="facts">{[f.kind, f.year, joinAr(f.countries), f.genres?.[0]].filter(Boolean).map((x) => <li>{x}</li>)}</ul>
-        {s.latest && <div class="ph-actions"><a class="btn" href={s.latest.path}>اقرأ ملخص الحلقة {s.latest.ep}</a></div>}
+        {s.latest && <div class="ph-actions"><a class="btn" href={s.latest.path}>اقرأ ملخص الحلقة {s.latest.ep}</a>{s.count > 1 && <a class="btn ghost" href={s.episodes[0].path}>ابدأ من الحلقة {s.episodes[0].ep}</a>}</div>}
       </div>
       <div class="ph-poster"><Poster s={s} />{s.image && <p class="img-cap">ملصق المسلسل، منشور بإذن من الجهة المالكة.</p>}</div>
     </div>

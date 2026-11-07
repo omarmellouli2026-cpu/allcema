@@ -175,6 +175,11 @@ WRITE_SYS = """أنت محرر دراما عربي محترف تكتب لموق�
 أعد JSON فقط: headline، intro (30-60 كلمة)، overview (فقرات مفصولة بسطر فارغ بالطول المطلوب)، highlights (قائمة 2-4 نقاط)، faq (قائمة {q,a} من 0 إلى 2)."""
 
 
+def seo_headline(title: str, ep: int) -> str:
+    """عنوان الصفحة وH1: «مسلسل X حلقة N وأبرز ما حدث» (يطابق ما يبحث عنه الناس ولا يضلّل)."""
+    return f"مسلسل {title} حلقة {ep} وأبرز ما حدث"
+
+
 def cliche_count(txt: str) -> int:
     return sum(txt.count(c) for c in CLICHES)
 
@@ -278,6 +283,7 @@ def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
                 st["held"] += 1
                 print(f"✗ {facts['title']} ح{ep} محجوزة: {notes}")
                 continue
+            art["headline"] = seo_headline(facts["title"], ep)      # عنوان ثابت يطابق نية البحث
             op = " ".join(P.words(art["intro"])[:6])
             openings.add(op)
             db.execute("""INSERT INTO recap_items(work_id,episode_no,state,facts_hash,article,opening,notes,updated_at) VALUES(?,?,?,?,?,?,?,?)

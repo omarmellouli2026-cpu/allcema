@@ -9,7 +9,7 @@ export function getStaticPaths() {
 }
 const { e } = Astro.props;
 const s = e.series, p = e.parsed;
-const others = load().series.filter((x) => x !== s).slice(0, 4);
+const others = load().live.filter((x) => x !== s).slice(0, 4);
 const first = s.episodes[0], last = s.latest;
 const near = s.episodes.filter((x) => x !== e).sort((a, b) => Math.abs(a.ep - e.ep) - Math.abs(b.ep - e.ep) || a.ep - b.ep).slice(0, 3);
 const abs = (x) => new URL(x, Astro.site).href;

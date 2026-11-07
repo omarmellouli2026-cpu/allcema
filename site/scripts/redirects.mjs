@@ -8,5 +8,12 @@ const lines = [
   ...episodes.map((e) => `${old(`/episode/${e.wid}-${e.ep}-${slugify(e.series.title)}/`)} ${old(e.path)} 301`),
 ].slice(0, 500);
 fs.mkdirSync('public', { recursive: true });
+// رسوم الذكاء الاصطناعي تُحفظ نصًّا (base64) في media/ وتُفكّ إلى public/media/ عند البناء
+if (fs.existsSync('media')) {
+  fs.mkdirSync('public/media', { recursive: true });
+  for (const f of fs.readdirSync('media').filter((x) => x.endsWith('.b64'))) {
+    fs.writeFileSync(`public/media/${f.replace(/\.b64$/, '.jpg')}`, Buffer.from(fs.readFileSync(`media/${f}`, 'utf8').trim(), 'base64'));
+  }
+}
 fs.writeFileSync('public/_redirects', lines.join('\n') + '\n');
 console.log(`redirects: ${lines.length}`);

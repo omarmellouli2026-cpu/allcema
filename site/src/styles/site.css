@@ -136,6 +136,11 @@ dl.card div:first-child{border-top:0}
 dl.card dt{font:600 .8rem var(--display);color:var(--mute)}
 dl.card dd{margin:0}
 .box .go{display:block;font:700 .95rem var(--display);color:var(--sig);margin-top:6px}
+.qn{margin:0;padding:0;list-style:none}
+.qn li+li{border-top:1px solid var(--line)}
+.qn a{display:block;padding:9px 0;font:600 .95rem var(--display)}
+.qn a:hover{color:var(--sig)}
+.btn.ghost{background:transparent;color:var(--on-ink);border:1px solid #ffffff59;margin-inline-start:10px}
 .pn{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:36px 0 0}
 .pn a{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:14px 18px;display:block}
 .pn a:hover{border-color:var(--sig)}
@@ -153,7 +158,7 @@ dl.card dd{margin:0}
 
 /* التذييل */
 .site-foot{margin-top:70px;background:var(--ink);color:var(--on-ink-mute);font-size:.95rem;line-height:1.9;padding:38px 0 30px}
-.foot-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:32px}
+.foot-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr);gap:32px}
 .site-foot b{display:block;font:700 1rem var(--display);color:var(--on-ink);margin-bottom:6px}
 .site-foot nav a{display:inline-block;margin-inline-end:20px;font:600 .9rem var(--display)}
 .site-foot a:hover{color:#fff}

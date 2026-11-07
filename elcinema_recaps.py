@@ -85,7 +85,8 @@ def research(title: str, year, ep: int, summary: str, key: str, session=requests
         user += f"ملخص رسمي قصير للمساعدة في التعرّف على الحلقة:\n{summary[:800]}\n"
     body = {"model": os.environ.get("ANTHROPIC_MODEL", P.DEFAULT_MODEL), "max_tokens": 3000, "system": RESEARCH_SYS,
             "messages": [{"role": "user", "content": user}],
-            "tools": [{"type": os.environ.get("WEB_SEARCH_TOOL", "web_search_20250305"), "name": "web_search", "max_uses": 4}]}
+            "tools": [{"type": os.environ.get("WEB_SEARCH_TOOL", "web_search_20250305"), "name": "web_search",
+                       "max_uses": int(os.environ.get("WEB_SEARCH_MAX_USES", "3"))}]}
     j = api_post(body, key, session)
     texts, domains, cited = [], set(), []
     for b in j.get("content", []):
@@ -158,10 +159,19 @@ def recap_gate(a: dict, source: str, facts: dict, min_words: int, prev_openings:
 
 
 # ───────────────────────── التشغيل ─────────────────────────
-def candidates(db, min_year: int, max_year: int):
+def candidates(db, min_year: int, max_year: int, args=None):
+    scope, sp = P.scope_sql(args, "w") if args is not None else ("", [])
     q = ("SELECT e.work_id, e.episode_no, COALESCE(e.summary,'') summary FROM episodes e JOIN works w ON w.work_id=e.work_id "
-         "WHERE w.year>=? " + ("AND w.year<=? " if max_year else "") + "ORDER BY w.first_seen_at DESC, e.work_id, e.episode_no DESC")
-    return db.execute(q, (min_year, max_year) if max_year else (min_year,)).fetchall()
+         "WHERE w.year>=? " + ("AND w.year<=? " if max_year else "") + scope +
+         " ORDER BY w.first_seen_at DESC, e.work_id, e.episode_no DESC")
+    return db.execute(q, ((min_year, max_year) if max_year else (min_year,)) + tuple(sp)).fetchall()
+
+
+def researched_today(db) -> int:
+    """عدد الحلقات التي بُحثت اليوم (UTC) — لحدّ الإنفاق اليومي."""
+    today = P.now_iso()[:10]
+    return db.execute("SELECT COUNT(*) FROM recap_items WHERE substr(updated_at,1,10)=? "
+                      "AND state IN ('ready','held','published')", (today,)).fetchone()[0]
 
 
 def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
@@ -174,9 +184,16 @@ def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
     model = os.environ.get("ANTHROPIC_MODEL", P.DEFAULT_MODEL)
     st = dict(researched=0, published=0, held=0, errors=0, skipped=0)
     openings = {r[0] for r in db.execute("SELECT opening FROM recap_items WHERE opening IS NOT NULL")}
-    for row in candidates(db, args.min_year, args.max_year):
+    daily_cap = getattr(args, "daily_cap", 0) or 0
+    done_today = researched_today(db) if daily_cap else 0
+    for row in candidates(db, args.min_year, args.max_year, args):
         if st["researched"] >= args.limit and st["published"] >= args.limit:
             break
+        # سقف الإنفاق اليومي: لا بحث جديد عند بلوغه؛ ما هو جاهز يُنشر فقط
+        cap_hit = bool(daily_cap) and done_today + st["researched"] >= daily_cap
+        if cap_hit and not st.get("cap_noted"):
+            print(f"بلغ الحد اليومي للبحث ({daily_cap}) — لا بحث جديد حتى الغد")
+            st["cap_noted"] = 1
         wid, ep, summary = row["work_id"], row["episode_no"], row["summary"]
         facts, _ = P.build_facts(db, wid, args.min_year)
         facts.update(episode_no=ep, schema_type="TVEpisode", spoiler=True)
@@ -192,7 +209,7 @@ def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
             continue
         art = json.loads(old["article"]) if old and old["article"] and old["facts_hash"] == h and old["state"] in ("ready", "error") else None
         if art is None:
-            if st["researched"] >= args.limit:
+            if st["researched"] >= args.limit or cap_hit:
                 continue
             st["researched"] += 1
             res = research_fn(facts["title"], facts.get("year"), ep, summary, key, session)
@@ -247,6 +264,7 @@ def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
         print(f"✓ {facts['title']} ح{ep} → {args.target} ({args.status})")
         if args.sleep:
             time.sleep(args.sleep)
+    st.pop("cap_noted", None)
     print("ملخص:", ", ".join(f"{k}={v}" for k, v in st.items()))
     return st
 
@@ -256,7 +274,10 @@ def main(argv=None) -> int:
     ap.add_argument("--data-dir", default="elcinema_data")
     ap.add_argument("--min-year", type=int, default=2026)
     ap.add_argument("--max-year", type=int, default=0)
-    ap.add_argument("--limit", type=int, default=10, help="أقصى عدد حلقات تُبحث/تُنشر في الدورة (تحكم بالتكلفة)")
+    ap.add_argument("--limit", type=int, default=3, help="أقصى عدد حلقات تُبحث/تُنشر في الدورة (تحكم بالتكلفة)")
+    ap.add_argument("--daily-cap", type=int, default=15, help="أقصى عدد حلقات تُبحث في اليوم (0 = بلا حد)")
+    ap.add_argument("--only-series", action=argparse.BooleanOptionalAction, default=True)
+    ap.add_argument("--countries", default="مصر", help="بلد/بلدان الإنتاج المسموحة؛ فارغ = كل البلدان")
     ap.add_argument("--min-sources", type=int, default=2, help="أقل عدد مواقع مستقلة لاعتماد حدث")
     ap.add_argument("--min-events", type=int, default=3)
     ap.add_argument("--target", choices=["jsonl", "wordpress", "webhook"], default="jsonl")

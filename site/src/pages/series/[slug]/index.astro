@@ -21,7 +21,7 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'TVSeries', name: s
     { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: abs('/') }, { '@type': 'ListItem', position: 2, name: 'المسلسلات', item: abs('/series/') },
     { '@type': 'ListItem', position: 3, name: s.title, item: abs(s.path) }] }];
 ---
-<Base title={`مسلسل ${s.title}: ملخصات كل الحلقات`} description={s.blurb} path={s.path} schema={schema} active="series">
+<Base title={`مسلسل ${s.title}: ملخصات كل الحلقات`} description={s.blurb} path={s.path} schema={schema} active="series" image={s.image}>
   <section class="band page-head"><div class="wrap">
     <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span><a href="/series/">المسلسلات</a><span>/</span>{s.title}</nav>
     <div class="ph-grid">
@@ -31,7 +31,7 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'TVSeries', name: s
         <ul class="facts">{[f.kind, f.year, joinAr(f.countries), f.genres?.[0]].filter(Boolean).map((x) => <li>{x}</li>)}</ul>
         {s.latest && <div class="ph-actions"><a class="btn" href={s.latest.path}>اقرأ ملخص الحلقة {s.latest.ep}</a></div>}
       </div>
-      <div class="ph-poster"><Poster s={s} /></div>
+      <div class="ph-poster"><Poster s={s} />{s.image && <p class="img-cap">رسم توضيحي بالذكاء الاصطناعي مستوحى من القصة، وليس الملصق الرسمي للمسلسل.</p>}</div>
     </div>
     {s.count > 0 && <Strip eps={s.episodes} />}
   </div></section>

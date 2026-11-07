@@ -4,7 +4,7 @@ import EpRow from '../components/EpRow.astro';
 import Tile from '../components/Tile.astro';
 import { SITE_NAME, SITE_TAGLINE } from '../config.js';
 import { load, desc } from '../lib/data.js';
-const { series, episodes } = load();
+const { live: series, episodes, upcoming } = load();
 const top = episodes[0] || null;
 const rest = episodes.slice(0, 6);
 const schema = [{ '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url: new URL('/', Astro.site).href, inLanguage: 'ar',
@@ -33,5 +33,9 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'WebSite', name: SI
       <div class="sec-head"><h2>المسلسلات</h2><a href="/series/">كل المسلسلات</a></div>
       <div class="tiles">{series.slice(0, 6).map((s) => <Tile s={s} />)}</div>
     </section>
+    {upcoming.length > 0 && <section class="section">
+      <div class="sec-head"><h2>رمضان 2027 قادم</h2><a href="/ramadan-2027/">كل المسلسلات المعلنة</a></div>
+      <div class="tiles">{upcoming.slice(0, 4).map((s) => <Tile s={s} />)}</div>
+    </section>}
   </div> : <div class="wrap"><p class="empty">لم تُنشر ملخصات بعد. تعود الصفحة إلى العمل فور نشر أول حلقة.</p></div>}
 </Base>

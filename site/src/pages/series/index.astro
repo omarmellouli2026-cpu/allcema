@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Tile from '../../components/Tile.astro';
 import { load } from '../../lib/data.js';
-const { series } = load();
+const { live: series } = load();
 ---
 <Base title="المسلسلات" description="المسلسلات التي نكتب ملخصات حلقاتها، مرتبة بحسب آخر حلقة." path="/series/" active="series">
   <section class="band page-head"><div class="wrap">

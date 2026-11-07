@@ -3,7 +3,8 @@ import { num } from '../lib/data.js';
 const { s } = Astro.props;
 const f = s.facts;
 ---
-<div class="poster" style={`--h:${s.hue}`} aria-hidden="true">
+<div class={s.image ? 'poster has-img' : 'poster'} style={`--h:${s.hue}`} aria-hidden="true">
+  {s.image && <img class="p-img" src={s.image} alt="" width="540" height="805" loading="lazy" decoding="async" />}
   <span class="p-count">{num(s.count)} {s.count === 1 ? 'حلقة' : 'حلقات'}</span>
   <span class="p-title">{s.title}</span>
   <span class="p-year">{f.year || ''}</span>

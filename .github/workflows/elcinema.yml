@@ -29,6 +29,9 @@ jobs:
         if: github.event.schedule != '40 3 * * *'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
           WP_URL: ${{ secrets.WP_URL }}
           WP_USER: ${{ secrets.WP_USER }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
@@ -39,12 +42,15 @@ jobs:
         if: github.event.schedule != '40 3 * * *'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
           WP_URL: ${{ secrets.WP_URL }}
           WP_USER: ${{ secrets.WP_USER }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
-        run: python elcinema_recaps.py --data-dir elcinema_data --target "${{ vars.SITE_TARGET || 'jsonl' }}" --status "${{ vars.PUBLISH_STATUS || 'draft' }}" --limit 3 --daily-cap "${{ vars.RECAP_DAILY_CAP || 15 }}" --credit-line "${{ vars.DISCLOSURE_LINE }}"
+        run: python elcinema_recaps.py --data-dir elcinema_data --target "${{ vars.SITE_TARGET || 'jsonl' }}" --status "${{ vars.PUBLISH_STATUS || 'draft' }}" --limit 5 --daily-cap "${{ vars.RECAP_DAILY_CAP || 40 }}" --credit-line "${{ vars.DISCLOSURE_LINE }}"
       - name: Daily backfill + schedules + verify
         if: github.event.schedule == '40 3 * * *'
         run: |

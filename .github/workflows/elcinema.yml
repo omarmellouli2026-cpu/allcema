@@ -1,8 +1,8 @@
 name: elcinema-auto
 on:
   schedule:
-    - cron: "17 */3 * * *"    # كل 3 ساعات: اكتشاف الجديد (يوفّر دقائق Actions)
-    - cron: "40 3 * * *"      # يوميًا: مسح كامل + تحقق
+    - cron: "17 */6 * * *"    # كل 6 ساعات: اكتشاف الجديد (يوفّر دقائق Actions)
+    - cron: "40 3 * * 0"      # أسبوعيًا (الأحد): مسح + تحقق
   workflow_dispatch:           # تشغيل يدوي من تبويب Actions
 
 permissions:
@@ -14,7 +14,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 50
     env:
       UA: elcinema-licensed-sync (${{ github.repository_owner }})
     steps:
@@ -23,10 +23,10 @@ jobs:
         with: { python-version: "3.12", cache: pip }
       - run: pip install -r requirements.txt
       - name: Hourly update
-        if: github.event.schedule != '40 3 * * *'
-        run: python elcinema_scraper.py update --data-dir elcinema_data --sitemap --probe-misses 100 --max-new 60 --user-agent "$UA"
+        if: github.event.schedule != '40 3 * * 0'
+        run: python elcinema_scraper.py update --data-dir elcinema_data --sitemap --probe-misses 100 --max-new 30 --user-agent "$UA"
       - name: Transform to original content and publish
-        if: github.event.schedule != '40 3 * * *'
+        if: github.event.schedule != '40 3 * * 0'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -39,7 +39,7 @@ jobs:
           WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
         run: python elcinema_publish.py run --data-dir elcinema_data --target "${{ vars.SITE_TARGET || 'jsonl' }}" --status "${{ vars.PUBLISH_STATUS || 'draft' }}" --limit 5
       - name: Episode recaps (elcinema + verified web research)
-        if: github.event.schedule != '40 3 * * *'
+        if: github.event.schedule != '40 3 * * 0'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -52,7 +52,7 @@ jobs:
           WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
         run: python elcinema_recaps.py --data-dir elcinema_data --target "${{ vars.SITE_TARGET || 'jsonl' }}" --status "${{ vars.PUBLISH_STATUS || 'draft' }}" --limit 5 --daily-cap "${{ vars.RECAP_DAILY_CAP || 40 }}" --credit-line "${{ vars.DISCLOSURE_LINE }}"
       - name: Daily backfill + schedules + verify
-        if: github.event.schedule == '40 3 * * *'
+        if: github.event.schedule == '40 3 * * 0'
         run: |
           python elcinema_scraper.py backfill --data-dir elcinema_data --user-agent "$UA"
           python elcinema_scraper.py schedules --data-dir elcinema_data --user-agent "$UA"

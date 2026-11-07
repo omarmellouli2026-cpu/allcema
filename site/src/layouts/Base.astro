@@ -7,7 +7,8 @@ import '@fontsource/noto-naskh-arabic/arabic-400.css';
 import '@fontsource/noto-naskh-arabic/arabic-600.css';
 import '../styles/site.css';
 import { SITE_NAME, SITE_TAGLINE, DISCLOSURE } from '../config.js';
-const { title, description = SITE_TAGLINE, path = '/', schema = [], noindex = false, type = 'website', active = '' } = Astro.props;
+const { title, description = SITE_TAGLINE, path = '/', schema = [], noindex = false, type = 'website', active = '', image = '' } = Astro.props;
+const imgUrl = image ? new URL(image, Astro.site).href : '';
 const url = new URL(path, Astro.site).href;
 const fullTitle = title === SITE_NAME ? `${SITE_NAME} | ${SITE_TAGLINE}` : `${title} | ${SITE_NAME}`;
 const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المسلسلات'], ['episodes', '/episodes/', 'الحلقات'], ['search', '/search/', 'بحث']];
@@ -27,7 +28,8 @@ const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المس
   <meta property="og:description" content={description} />
   <meta property="og:url" content={url} />
   <meta property="og:locale" content="ar_AR" />
-  <meta name="twitter:card" content="summary" />
+  {imgUrl && <meta property="og:image" content={imgUrl} />}
+  <meta name="twitter:card" content={imgUrl ? 'summary_large_image' : 'summary'} />
   <link rel="alternate" type="application/rss+xml" title={SITE_NAME} href="/rss.xml" />
   <meta name="theme-color" content="#1c2140" />
   {schema.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}

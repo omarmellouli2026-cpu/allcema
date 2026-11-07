@@ -3,7 +3,9 @@ import Base from '../../layouts/Base.astro';
 import { SITE_NAME } from '../../config.js';
 ---
 <Base title="سياسة الخصوصية" path="/privacy/" description={`سياسة الخصوصية وملفات الارتباط في ${SITE_NAME}.`}>
-  <h1>سياسة الخصوصية</h1>
-  <p>لا نطلب من الزائر أي بيانات شخصية لتصفّح {SITE_NAME}. قد نستخدم أدوات إحصاء مجهولة، وقد تعرض جهات إعلانية خارجية (مثل Google AdSense) إعلانات وتستخدم ملفات تعريف الارتباط لتخصيصها. يمكنك التحكم فيها من إعدادات متصفحك أو من <a href="https://adssettings.google.com">إعدادات إعلانات Google</a>.</p>
-  <p>للاستفسار عن بياناتك راسلنا عبر صفحة «اتصل بنا».</p>
+  <section class="band page-head"><div class="wrap"><nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>الخصوصية</nav><h1>سياسة الخصوصية</h1></div></section>
+  <div class="wrap"><div class="plain prose">
+    <p>لا نطلب من الزائر أي بيانات شخصية لتصفّح {SITE_NAME}. قد نستخدم أدوات إحصاء مجهولة، وقد تعرض جهات إعلانية خارجية (مثل Google AdSense) إعلانات وتستخدم ملفات تعريف الارتباط لتخصيصها. يمكنك التحكم فيها من إعدادات متصفحك أو من <a href="https://adssettings.google.com" style="color:var(--sig)">إعدادات إعلانات Google</a>.</p>
+    <p>للاستفسار عن بياناتك راسلنا عبر صفحة «اتصل بنا».</p>
+  </div></div>
 </Base>

@@ -120,11 +120,47 @@ def research_gemini(user: str, session=requests) -> dict:
             "domains": domains, "cited": ""}
 
 
+def deepseek_search(query: str, key: str, session=requests, count: int = 8) -> list[dict]:
+    """بحث DeepSeek (≈0.00075$ للطلب الناجح). يعيد قائمة نتائج {title,url,summary,date}."""
+    j = P.deepseek_post("/v1/tools/search", {"query": query[:128], "count": count}, key, session)
+    return [r for r in (j.get("results") or []) if isinstance(r, dict) and r.get("url")]
+
+
+def research_deepseek(title: str, year, ep: int, user: str, key: str, session=requests) -> dict:
+    """بحث ثم تلخيص: نتائج البحث الحقيقية تُعطى للنموذج، والنطاقات المعتمدة هي نطاقات النتائج فقط."""
+    queries = [f"مسلسل {title} الحلقة {ep} أحداث الحلقة", f"مسلسل {title} الحلقة {ep} أين يعرض القناة المنصة"]
+    results, seen = [], set()
+    for q in queries:
+        for r in deepseek_search(q, key, session):
+            u = r.get("url", "")
+            if u not in seen:
+                seen.add(u)
+                results.append(r)
+    results = results[:12]
+    domains = {domain(r["url"]) for r in results}
+    domains.discard("")
+    if not results:
+        return {"events": [], "watch": None, "domains": domains, "cited": ""}
+    lines = []
+    for n, r in enumerate(results, 1):
+        text = re.sub(r"\s+", " ", str(r.get("summary") or r.get("snippet") or "")).strip()[:700]
+        lines.append(f"[{n}] {domain(r['url'])} — {str(r.get('title') or '')[:120]}\n{text}")
+    prompt = (user + "\nنتائج البحث (استخدمها وحدها؛ اذكر في sources نطاقات هذه النتائج فقط):\n" + "\n\n".join(lines) +
+              "\n\nأعد JSON فقط.")
+    prov, _k, model = P.llm_config()
+    raw = P.call_deepseek(RESEARCH_SYS, prompt, model, key, session)
+    obj = _parse_obj(raw)
+    return {"events": obj.get("events") if isinstance(obj.get("events"), list) else [], "watch": obj.get("watch"),
+            "domains": domains, "cited": ""}
+
+
 def research(title: str, year, ep: int, summary: str, key: str, session=requests) -> dict:
     """يعيد {events:[{fact,sources}], domains:set, cited:str}"""
     user = f"المسلسل: {title}" + (f" ({year})" if year else "") + f"\nالحلقة رقم: {ep}\n"
     if summary:
         user += f"ملخص رسمي قصير للمساعدة في التعرّف على الحلقة:\n{summary[:800]}\n"
+    if P.llm_config()[0] == "deepseek":
+        return research_deepseek(title, year, ep, user, key, session)
     if P.llm_config()[0] == "gemini":
         return research_gemini(user, session)
     body = {"model": os.environ.get("ANTHROPIC_MODEL", P.DEFAULT_MODEL), "max_tokens": 3000, "system": RESEARCH_SYS,
@@ -264,7 +300,7 @@ def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
     db.executescript(RECAP_DDL)
     prov, key, model = P.llm_config()
     if not key:
-        raise SystemExit(f"مفتاح {prov} غير مضبوط (ANTHROPIC_API_KEY أو GEMINI_API_KEY)")
+        raise SystemExit(f"مفتاح {prov} غير مضبوط (ANTHROPIC_API_KEY أو GEMINI_API_KEY أو DEEPSEEK_API_KEY)")
     st = dict(researched=0, published=0, held=0, errors=0, skipped=0)
     openings = {r[0] for r in db.execute("SELECT opening FROM recap_items WHERE opening IS NOT NULL")}
     daily_cap = getattr(args, "daily_cap", 0) or 0

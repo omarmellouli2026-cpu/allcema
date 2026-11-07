@@ -78,11 +78,45 @@ RESEARCH_SYS = """أنت باحث دراما. ابحث في الويب العر�
 - لا تنقل جملًا حرفية. لا تضف حدثًا لم تجده في نتائج البحث. اذكر نطاقات المواقع التي وجدت فيها الحدث فعلًا."""
 
 
+def _parse_events(raw: str) -> list:
+    a, z = raw.find("{"), raw.rfind("}")
+    if a >= 0 and z > a:
+        try:
+            return json.loads(raw[a:z + 1]).get("events", [])
+        except json.JSONDecodeError:
+            return []
+    return []
+
+
+def chunk_label(web: dict) -> str:
+    """اسم المصدر من نتيجة Gemini: العنوان عادةً هو النطاق؛ الرابط وسيط تحويل لجوجل فلا يُعتمد."""
+    t = (web.get("title") or "").strip().lower()
+    if re.fullmatch(r"[a-z0-9-]+(\.[a-z0-9-]+)+", t):
+        return domain(t)
+    return t or domain(web.get("uri", ""))
+
+
+def research_gemini(user: str, session=requests) -> dict:
+    prov, key, model = P.llm_config()
+    j = P.gemini_post({"systemInstruction": {"parts": [{"text": RESEARCH_SYS}]},
+                       "contents": [{"role": "user", "parts": [{"text": user}]}],
+                       "tools": [{"google_search": {}}],
+                       "generationConfig": {"maxOutputTokens": 4096}}, model, key, session)
+    c = (j.get("candidates") or [{}])[0]
+    gm = c.get("groundingMetadata") or {}
+    domains = {chunk_label(ch.get("web") or {}) for ch in gm.get("groundingChunks") or [] if ch.get("web")}
+    domains.discard("")
+    # لا نص مصدر حرفي من Gemini؛ المقارنة ضد النسخ تتم على ملخص elcinema فقط
+    return {"events": _parse_events(P.gemini_text(j)), "domains": domains, "cited": ""}
+
+
 def research(title: str, year, ep: int, summary: str, key: str, session=requests) -> dict:
     """يعيد {events:[{fact,sources}], domains:set, cited:str}"""
     user = f"المسلسل: {title}" + (f" ({year})" if year else "") + f"\nالحلقة رقم: {ep}\n"
     if summary:
         user += f"ملخص رسمي قصير للمساعدة في التعرّف على الحلقة:\n{summary[:800]}\n"
+    if P.llm_config()[0] == "gemini":
+        return research_gemini(user, session)
     body = {"model": os.environ.get("ANTHROPIC_MODEL", P.DEFAULT_MODEL), "max_tokens": 3000, "system": RESEARCH_SYS,
             "messages": [{"role": "user", "content": user}],
             "tools": [{"type": os.environ.get("WEB_SEARCH_TOOL", "web_search_20250305"), "name": "web_search",
@@ -178,10 +212,9 @@ def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
     session = session or requests.Session()
     db = P.open_db(args.data_dir)
     db.executescript(RECAP_DDL)
-    key = os.environ.get("ANTHROPIC_API_KEY")
+    prov, key, model = P.llm_config()
     if not key:
-        raise SystemExit("ANTHROPIC_API_KEY غير مضبوط")
-    model = os.environ.get("ANTHROPIC_MODEL", P.DEFAULT_MODEL)
+        raise SystemExit(f"مفتاح {prov} غير مضبوط (ANTHROPIC_API_KEY أو GEMINI_API_KEY)")
     st = dict(researched=0, published=0, held=0, errors=0, skipped=0)
     openings = {r[0] for r in db.execute("SELECT opening FROM recap_items WHERE opening IS NOT NULL")}
     daily_cap = getattr(args, "daily_cap", 0) or 0
@@ -275,7 +308,7 @@ def main(argv=None) -> int:
     ap.add_argument("--min-year", type=int, default=2026)
     ap.add_argument("--max-year", type=int, default=0)
     ap.add_argument("--limit", type=int, default=3, help="أقصى عدد حلقات تُبحث/تُنشر في الدورة (تحكم بالتكلفة)")
-    ap.add_argument("--daily-cap", type=int, default=15, help="أقصى عدد حلقات تُبحث في اليوم (0 = بلا حد)")
+    ap.add_argument("--daily-cap", type=int, default=40, help="أقصى عدد حلقات تُبحث في اليوم (0 = بلا حد)")
     ap.add_argument("--only-series", action=argparse.BooleanOptionalAction, default=True)
     ap.add_argument("--countries", default="مصر", help="بلد/بلدان الإنتاج المسموحة؛ فارغ = كل البلدان")
     ap.add_argument("--min-sources", type=int, default=2, help="أقل عدد مواقع مستقلة لاعتماد حدث")

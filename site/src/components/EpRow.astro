@@ -1,0 +1,12 @@
+---
+import { desc, fmtDate } from '../lib/data.js';
+const { e, showSeries = true } = Astro.props;
+---
+<li><a class="ep-row" href={e.path}>
+  <span class="num" aria-hidden="true">{e.numeral}</span>
+  <div>
+    <h3>{showSeries ? `مسلسل ${e.series.title} حلقة ${e.ep}` : `الحلقة ${e.ep}`}{e.fresh && <span class="new">جديد</span>}</h3>
+    <p>{desc(e.excerpt, 200)}</p>
+  </div>
+  <time datetime={String(e.at).slice(0, 10)}>{fmtDate(e.at)}</time>
+</a></li>

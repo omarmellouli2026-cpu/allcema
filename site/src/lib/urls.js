@@ -5,8 +5,8 @@ export function allUrls(site) {
   const latest = (list) => list.reduce((m, x) => (String(x.at) > m ? String(x.at) : m), '');
   const out = [{ loc: abs('/'), lastmod: latest(episodes) }, { loc: abs('/series/'), lastmod: latest(series) },
     { loc: abs('/episodes/'), lastmod: latest(episodes) }];
-  for (const s of series) out.push({ loc: abs(s.path), lastmod: String(s.at) });
-  for (const e of episodes) out.push({ loc: abs(e.path), lastmod: String(e.at) });
+  for (const s of series) if (!s.noindex) out.push({ loc: abs(s.path), lastmod: String(s.at) });
+  for (const e of episodes) if (!e.series.noindex) out.push({ loc: abs(e.path), lastmod: String(e.at) });
   for (const p of ['/about/', '/privacy/', '/contact/']) out.push({ loc: abs(p), lastmod: '' });
   return out;
 }

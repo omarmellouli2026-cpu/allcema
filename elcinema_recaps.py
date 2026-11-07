@@ -18,6 +18,7 @@ import os
 import re
 import sys
 import time
+from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 import requests
@@ -281,10 +282,31 @@ def recap_gate(a: dict, source: str, facts: dict, min_words: int, prev_openings:
 # ───────────────────────── التشغيل ─────────────────────────
 def candidates(db, min_year: int, max_year: int, args=None):
     scope, sp = P.scope_sql(args, "w") if args is not None else ("", [])
+    only = [int(x) for x in (getattr(args, "work_ids", None) or [])]
+    flt = (" AND e.work_id IN (%s)" % ",".join("?" * len(only))) if only else ""
     q = ("SELECT e.work_id, e.episode_no, COALESCE(e.summary,'') summary FROM episodes e JOIN works w ON w.work_id=e.work_id "
-         "WHERE w.year>=? " + ("AND w.year<=? " if max_year else "") + scope +
+         "WHERE w.year>=? " + ("AND w.year<=? " if max_year else "") + scope + flt +
          " ORDER BY w.first_seen_at DESC, e.work_id, e.episode_no DESC")
-    return db.execute(q, ((min_year, max_year) if max_year else (min_year,)) + tuple(sp)).fetchall()
+    rows = [dict(r) for r in db.execute(q, ((min_year, max_year) if max_year else (min_year,)) + tuple(sp) + tuple(only)).fetchall()]
+    if only and getattr(args, "expect_episodes", False):
+        # عمل يُعرض الآن: elcinema لا يسرد إلا الحلقات التي لها ملخص عنده، فنُكمل 1..عدد الحلقات
+        # ونترك البحث الموثَّق بالمصادر يقرر ما إذا كانت الحلقة قد عُرضت فعلًا.
+        have = {(r["work_id"], r["episode_no"]) for r in rows}
+        for wid in only:
+            w = db.execute("SELECT episodes_count FROM works WHERE work_id=? AND year>=?", (wid, min_year)).fetchone()
+            n = (w["episodes_count"] if w and w["episodes_count"] else 0) or 0
+            for ep in range(n, 0, -1):
+                if (wid, ep) not in have:
+                    rows.append({"work_id": wid, "episode_no": ep, "summary": ""})
+        rows.sort(key=lambda r: (only.index(r["work_id"]), r["episode_no"]))
+    return rows
+
+
+def held_age_hours(ts) -> float:
+    try:
+        return (datetime.now(timezone.utc) - datetime.fromisoformat(str(ts).replace("Z", "+00:00"))).total_seconds() / 3600
+    except (ValueError, TypeError):
+        return 1e9
 
 
 def researched_today(db) -> int:
@@ -324,8 +346,10 @@ def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
             st["skipped"] += 1
             continue
         if old and old["state"] == "held" and old["facts_hash"] == h and not args.retry_held:
-            st["skipped"] += 1
-            continue
+            hrs = getattr(args, "retry_held_hours", 0) or 0
+            if not (hrs and held_age_hours(old["updated_at"]) >= hrs):
+                st["skipped"] += 1
+                continue
         art = json.loads(old["article"]) if old and old["article"] and old["facts_hash"] == h and old["state"] in ("ready", "error") else None
         if art is None:
             if st["researched"] >= args.limit or cap_hit:
@@ -416,6 +440,9 @@ def main(argv=None) -> int:
     ap.add_argument("--min-words", type=int, default=110)
     ap.add_argument("--credit-line", default="", help="سطر إفصاح اختياري يظهر أسفل المقال")
     ap.add_argument("--retry-held", action="store_true")
+    ap.add_argument("--retry-held-hours", type=float, default=0, help="أعد محاولة الحلقات المحجوزة بعد هذا العدد من الساعات (0=لا)")
+    ap.add_argument("--work-ids", type=int, nargs="+", help="اقصر العمل على هذه الأعمال فقط (مثال: 2100300)")
+    ap.add_argument("--expect-episodes", action="store_true", help="مع --work-ids: اعتبر الحلقات 1..عدد الحلقات مرشَّحة حتى لو لم يسرد elcinema ملخصها")
     ap.add_argument("--no-publish", action="store_true")
     ap.add_argument("--sleep", type=float, default=1.0)
     a = ap.parse_args(argv)

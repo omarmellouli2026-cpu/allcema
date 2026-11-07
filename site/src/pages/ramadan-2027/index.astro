@@ -1,0 +1,17 @@
+---
+import Base from '../../layouts/Base.astro';
+import Tile from '../../components/Tile.astro';
+import { load } from '../../lib/data.js';
+const { upcoming } = load();
+---
+<Base title="مسلسلات رمضان 2027" description="مسلسلات رمضان 2027 المعلنة حتى الآن: الأبطال والمخرجون، وملخص كل حلقة بعد عرضها." path="/ramadan-2027/" noindex={true} active="series">
+  <section class="band page-head"><div class="wrap">
+    <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>رمضان 2027</nav>
+    <h1>مسلسلات رمضان 2027</h1>
+    <p class="lead" style="max-width:62ch">الأعمال المعلنة حتى الآن لموسم رمضان 2027. نضيف كل مسلسل عند الإعلان عنه، وننشر ملخص حلقاته بعد عرضها.</p>
+  </div></section>
+  <div class="wrap">
+    {upcoming.length ? <div class="tiles" style="margin-top:34px">{upcoming.map((s) => <Tile s={s} />)}</div> : <p class="empty">لم تُضف مسلسلات بعد.</p>}
+    <p class="img-cap" style="margin-top:30px">المعلومات مأخوذة من تقارير صحفية منشورة (vetogate.com وyoulyou.com)، وقد تتغير الأسماء والأبطال قبل العرض.</p>
+  </div>
+</Base>

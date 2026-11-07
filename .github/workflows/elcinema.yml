@@ -34,7 +34,7 @@ jobs:
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
-        run: python elcinema_publish.py run --data-dir elcinema_data --target "${{ vars.SITE_TARGET || 'jsonl' }}" --status "${{ vars.PUBLISH_STATUS || 'draft' }}" --limit 20
+        run: python elcinema_publish.py run --data-dir elcinema_data --target "${{ vars.SITE_TARGET || 'jsonl' }}" --status "${{ vars.PUBLISH_STATUS || 'draft' }}" --limit 5
       - name: Episode recaps (elcinema + verified web research)
         if: github.event.schedule != '40 3 * * *'
         env:
@@ -44,7 +44,7 @@ jobs:
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
-        run: python elcinema_recaps.py --data-dir elcinema_data --target "${{ vars.SITE_TARGET || 'jsonl' }}" --status "${{ vars.PUBLISH_STATUS || 'draft' }}" --limit 10 --credit-line "${{ vars.DISCLOSURE_LINE }}"
+        run: python elcinema_recaps.py --data-dir elcinema_data --target "${{ vars.SITE_TARGET || 'jsonl' }}" --status "${{ vars.PUBLISH_STATUS || 'draft' }}" --limit 3 --daily-cap "${{ vars.RECAP_DAILY_CAP || 15 }}" --credit-line "${{ vars.DISCLOSURE_LINE }}"
       - name: Daily backfill + schedules + verify
         if: github.event.schedule == '40 3 * * *'
         run: |

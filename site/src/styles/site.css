@@ -184,8 +184,14 @@ dl.card dd{margin:0}
   .pn{grid-template-columns:1fr}
   .site-head .wrap{gap:8px}
   .logo{font-size:1.15rem;gap:7px}
-  .site-head nav{font-size:.82rem}
-  .site-head nav a{padding:10px 6px}
+  .site-head nav{font-size:.78rem;gap:0}
+  .site-head nav a{padding:10px 4px}
+  .logo{font-size:1.05rem;gap:5px}
+  .logo i{width:8px;height:8px}
+  .logo{flex:none}
+  .site-head nav{min-width:0;overflow-x:auto;scrollbar-width:none}
+  .site-head nav::-webkit-scrollbar{display:none}
+  .site-head nav a{white-space:nowrap}
 }
 @media (prefers-reduced-motion:no-preference){
   .tile,.feature,.strip a,.pn a{transition:border-color .15s}

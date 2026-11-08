@@ -1,0 +1,31 @@
+name: seo-batch5
+# يُنفَّذ مرة واحدة عند حفظ هذا الملف: رأس الموقع مبسّط (روابط رئيسية، أيقونة بحث، قائمة للجوال)
+on:
+  push:
+    paths:
+      - ".github/workflows/seo-batch5.yml"
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PAYLOAD: "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"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Apply patch
+        run: echo "$PAYLOAD" | base64 -d | gunzip > /tmp/patch.py && python3 /tmp/patch.py
+      - name: Verify build
+        working-directory: site
+        run: npm install && npm run build
+      - name: Commit
+        run: |
+          git config user.name "allcema-bot"; git config user.email "bot@users.noreply.github.com"
+          git add -A site
+          git diff --cached --quiet || (git commit -m "site: simplified header with search icon and mobile menu" && git pull --rebase && git push)

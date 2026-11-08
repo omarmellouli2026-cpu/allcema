@@ -1,9 +1,10 @@
 ---
 const { f } = Astro.props;
 const list = (f.tv_airings || []).filter((a) => a.channel);
-const by = new Map();
-for (const a of list) { if (!by.has(a.channel)) by.set(a.channel, []); by.get(a.channel).push(a); }
+const channels = [...new Set(list.map((a) => a.channel))];
+const link = f.work_id && Number(f.work_id) > 0 ? `https://elcinema.com/work/${Number(f.work_id)}/tvguide` : '';
 ---
-{by.size > 0 && <div class="box"><h2>أين يُعرض</h2>
-  {[...by].map(([ch, rows]) => <div class="air"><b>{ch}</b><ul>{rows.map((r) => <li>{[r.date, r.time].filter(Boolean).join(' · ')}</li>)}</ul></div>)}
-  <p class="img-cap">مواعيد العرض على القنوات وقت آخر تحديث لبياناتنا، وقد تتغير. تحقّق من جدول القناة قبل المتابعة.</p></div>}
+{channels.length > 0 && <div class="box"><h2>أين يُعرض</h2>
+  <p class="img-cap" style="margin:0 0 10px">يُعرض العمل على:</p>
+  {channels.map((ch) => <div class="air"><b>{ch}</b></div>)}
+  <p class="img-cap">القنوات بحسب آخر تحديث لبياناتنا. تختلف مواعيد العرض حسب بلدك وتتغير باستمرار، لذلك لا نعرض ساعات محددة هنا{link ? <>؛ تجد جدول المواعيد الحالي في <a href={link} target="_blank" rel="nofollow noopener noreferrer" style="color:var(--sig)">دليل القنوات</a></> : ''}.</p></div>}

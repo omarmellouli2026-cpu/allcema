@@ -18,7 +18,7 @@ const crumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', it
 const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: p.faq.map((x) => ({ '@type': 'Question', name: x.q,
   acceptedAnswer: { '@type': 'Answer', text: x.a } })) } : null;
 ---
-<Base title={m.headline || `فيلم ${m.title}`} description={desc(m.excerpt)} path={m.path} schema={[...(m.schema ? [m.schema] : []), crumbs, ...(faq ? [faq] : [])]} type="article" active="films">
+<Base title={m.headline || `فيلم ${m.title}`} description={desc(m.excerpt)} path={m.path} schema={[...(m.schema ? [m.schema] : []), crumbs, ...(faq ? [faq] : [])]} type="article" active="films" image={m.image}>
   <section class="band page-head"><div class="wrap">
     <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span><a href="/films/">الأفلام</a><span>/</span>{m.title}</nav>
     <div class="ph-grid">
@@ -28,7 +28,7 @@ const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage
         <ul class="facts">{[f.kind, f.year, joinAr(f.countries), f.genres?.[0]].filter(Boolean).map((x) => <li>{x}</li>)}</ul>
         <div class="meta-line">{m.at && <time datetime={String(m.at).slice(0, 10)}>{fmtDate(m.at)}</time>}<span>قراءة {minutes(m.mins)}</span></div>
       </div>
-      <div class="ph-poster"><Poster s={m} /></div>
+      <div class="ph-poster"><Poster s={m} />{m.image && <p class="img-cap">ملصق الفيلم، منشور بإذن من الجهة المالكة.</p>}</div>
     </div>
   </div></section>
   <div class="wrap ep-layout">

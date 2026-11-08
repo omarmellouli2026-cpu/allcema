@@ -37,8 +37,13 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'TVSeries', name: s
   </div></section>
   <div class="wrap ep-layout">
     <div>
-      <div class="sec-head"><h2>ملخصات الحلقات{s.count ? ` (${num(s.count)})` : ''}</h2></div>
-      {s.count ? <ul class="ep-list">{desc.map((e) => <EpRow e={e} showSeries={false} />)}</ul> : <p class="empty">{s.upcoming ? `المسلسل من أعمال رمضان ${f.year} المعلنة ولم يبدأ عرضه بعد. ننشر ملخص كل حلقة بعد عرضها.` : 'لا توجد ملخصات منشورة لهذا المسلسل بعد.'}</p>}
+      {s.article && <article class="prose" style="margin-bottom:34px">
+        <div class="lede" set:html={s.article.lead} />
+        {s.article.sections.map((x) => <><h2>{x.title}</h2><div set:html={x.html} /></>)}
+        {s.article.faq.length > 0 && <section class="faq"><h2>أسئلة شائعة</h2>{s.article.faq.map((x) => <><h3>{x.q}</h3><p>{x.a}</p></>)}</section>}
+      </article>}
+      {(s.count || !s.article) && <div class="sec-head"><h2>ملخصات الحلقات{s.count ? ` (${num(s.count)})` : ''}</h2></div>}
+      {s.count ? <ul class="ep-list">{desc.map((e) => <EpRow e={e} showSeries={false} />)}</ul> : (s.article ? null : <p class="empty">{s.upcoming ? `المسلسل من أعمال رمضان ${f.year} المعلنة ولم يبدأ عرضه بعد. ننشر ملخص كل حلقة بعد عرضها.` : 'لا توجد ملخصات منشورة لهذا المسلسل بعد.'}</p>)}
     </div>
     <aside>
       <div class="box"><h2>عن المسلسل</h2><p style="margin:0 0 10px;font-size:.97rem;line-height:1.9">{s.blurb}</p>

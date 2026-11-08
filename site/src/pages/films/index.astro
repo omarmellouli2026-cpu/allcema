@@ -1,0 +1,15 @@
+---
+import Base from '../../layouts/Base.astro';
+import Tile from '../../components/Tile.astro';
+import { load } from '../../lib/data.js';
+const { films } = load();
+---
+<Base title="الأفلام" description="أفلام مصرية جديدة: القصة والأبطال والتقييم ومكان المشاهدة من بيانات مؤكدة." path="/films/" active="films">
+  <section class="band page-head"><div class="wrap">
+    <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>الأفلام</nav>
+    <h1>الأفلام</h1>
+  </div></section>
+  <div class="wrap">
+    {films.length ? <div class="tiles" style="margin-top:34px">{films.map((m) => <Tile s={m} />)}</div> : <p class="empty">لا توجد أفلام منشورة بعد.</p>}
+  </div>
+</Base>

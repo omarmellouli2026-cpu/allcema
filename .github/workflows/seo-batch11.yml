@@ -1,0 +1,31 @@
+name: seo-batch11
+# يُنفَّذ مرة واحدة: صفحة وقسم «الأكثر مشاهدة» + روابط بطاقة الفيلم
+on:
+  push:
+    paths:
+      - ".github/workflows/seo-batch11.yml"
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PAYLOAD: "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"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Apply patch
+        run: echo "$PAYLOAD" | base64 -d | gunzip > /tmp/patch.py && python3 /tmp/patch.py
+      - name: Verify build
+        working-directory: site
+        run: npm install && npm run build
+      - name: Commit
+        run: |
+          git config user.name "allcema-bot"; git config user.email "bot@users.noreply.github.com"
+          git add -A site
+          git diff --cached --quiet || (git commit -m "site: trending page and home section, film card links" && git pull --rebase && git push)

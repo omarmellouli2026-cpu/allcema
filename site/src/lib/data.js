@@ -13,6 +13,8 @@ const latin = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').r
 const idStr = (n) => (n < 0 ? `g${-n}` : String(n));
 // رسوم الذكاء الاصطناعي لأعمال رمضان: media/pack.json = { g2027001: base64, ... }
 const PACK = (() => { try { return JSON.parse(fs.readFileSync(path.resolve('media', 'pack.json'), 'utf8')); } catch { return {}; } })();
+// الملصقات الأصلية (بترخيص كتابي): تُنزَّل إلى public/media/posters/<id>.jpg بواسطة workflow باسم posters
+const POSTER = (id) => (fs.existsSync(path.resolve('public', 'media', 'posters', `${id}.jpg`)) ? `/media/posters/${id}.jpg` : '');
 const strip = (h) => String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
 function readJsonl(file) {
@@ -133,8 +135,8 @@ export function load() {
       upcoming: up, noindex: !!(item && item.noindex),
       kind: 'series', id: wid, title, alt: f.alt_title || '', slug, path: `/series/${slug}/`, facts: f,
       hue: [...title].reduce((a, c) => a + c.charCodeAt(0), 0) % 360,
-      image: fs.existsSync(path.resolve('media', `${wid}.b64`)) ? `/media/${wid}.jpg` : PACK[idStr(wid)] ? `/media/${idStr(wid)}.jpg` : '',
-      art: !fs.existsSync(path.resolve('media', `${wid}.b64`)) && !!PACK[idStr(wid)],
+      image: fs.existsSync(path.resolve('media', `${wid}.b64`)) ? `/media/${wid}.jpg` : POSTER(idStr(wid)) || (PACK[idStr(wid)] ? `/media/${idStr(wid)}.jpg` : ''),
+      art: !fs.existsSync(path.resolve('media', `${wid}.b64`)) && !POSTER(idStr(wid)) && !!PACK[idStr(wid)],
       item, article: item && item.html && !up ? parseArticle(item.html) : null, excerpt: (item && item.excerpt) || blurb(f, up), blurb: blurb(f, up), episodes: [],
     };
     s.episodes = eps0.map((o) => {
@@ -156,7 +158,7 @@ export function load() {
   const films = items.filter(isFilm).map((o) => {
     const f = o.facts, slug = `${latin(f.alt_title) || slugify(f.title)}-${idStr(o.work_id)}`;
     return { kind: 'film', isFilm: true, id: o.work_id, title: f.title, headline: o.title, alt: f.alt_title || '', slug, path: `/films/${slug}/`, facts: f, item: o,
-      hue: [...f.title].reduce((a, c) => a + c.charCodeAt(0), 0) % 360, image: '', count: 0, at: o.at || '',
+      hue: [...f.title].reduce((a, c) => a + c.charCodeAt(0), 0) % 360, image: POSTER(idStr(o.work_id)), count: 0, at: o.at || '',
       parsed: parseArticle(o.html), excerpt: o.excerpt || blurb(f, false), blurb: o.excerpt || blurb(f, false), schema: o.schema || null,
       mins: Math.max(1, Math.round(strip(o.html).split(/\s+/).length / 180)) };
   }).sort((a, b) => String(b.at).localeCompare(String(a.at)));

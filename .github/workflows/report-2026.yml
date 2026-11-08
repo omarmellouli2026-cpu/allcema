@@ -1,0 +1,54 @@
+name: report-2026
+on:
+  push:
+    paths: [".github/workflows/report-2026.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Report candidates
+        run: |
+          python3 - <<'PY'
+          import glob, sqlite3, json
+          db = sqlite3.connect(glob.glob("elcinema_data/*.sqlite")[0])
+          q = lambda s, a=(): db.execute(s, a).fetchall()
+          out = []
+          P = out.append
+          P("works total: %s" % q("select count(*) from works")[0][0])
+          P("queue by state: %s" % q("select state,count(*) from queue group by state"))
+          P("site_items by state: %s" % q("select state,count(*) from site_items group by state"))
+          rows = q("""select w.work_id,w.title_ar,w.year,w.is_series,w.countries,w.episodes_count,w.status,w.fetched_at,si.state
+                      from works w left join site_items si on si.work_id=w.work_id
+                      where w.year>=2026 order by w.is_series desc,w.work_id""")
+          P("works year>=2026: %d" % len(rows))
+          eg = [r for r in rows if r[4] and "مصر" in r[4]]
+          P("  egypt: %d | series %d | films %d" % (len(eg), sum(1 for r in eg if r[3]), sum(1 for r in eg if not r[3])))
+          P("  countries empty: %d" % sum(1 for r in rows if not r[4]))
+          P("  egypt published: %d | held: %d | no site_item: %d | other: %d" % (
+              sum(1 for r in eg if r[8]=="published"), sum(1 for r in eg if r[8]=="held"), sum(1 for r in eg if r[8] is None), sum(1 for r in eg if r[8] not in (None,"published","held"))))
+          P("")
+          P("== egypt 2026 NOT published ==")
+          for r in eg:
+              if r[8] != "published":
+                  P("%s | %s | %s | %s | eps=%s | status=%s | si=%s" % (r[0], "S" if r[3] else "F", r[2], r[1], r[5], r[6], r[8]))
+          P("")
+          P("== 2026+ without country data (first 40) ==")
+          for r in [r for r in rows if not r[4]][:40]:
+              P("%s | %s | %s | %s" % (r[0], "S" if r[3] else "F", r[2], r[1]))
+          open("elcinema_data/candidates_2026.txt", "w", encoding="utf-8").write("\n".join(out) + "\n")
+          print("\n".join(out[:12]))
+          PY
+      - name: Save report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add elcinema_data/candidates_2026.txt
+          git commit -m "report: candidates 2026" || exit 0
+          git pull --rebase && git push

@@ -30,6 +30,12 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'WebSite', name: SI
   </div></section>
 
   <div class="wrap">
+    <div class="stats" aria-label="أرقام الموقع">
+      <div><b>{series.length}</b><span>مسلسلًا</span></div>
+      <div><b>{films.length}</b><span>فيلمًا</span></div>
+      <div><b>{episodes.length}</b><span>ملخص حلقة</span></div>
+      <div><b>{upcoming.length}</b><span>مسلسل رمضان 2027</span></div>
+    </div>
     {rest.length > 0 && <section class="section">
       <div class="sec-head"><h2>آخر الحلقات</h2><a href="/episodes/">كل الحلقات</a></div>
       <ul class="ep-list compact">{rest.map((e) => <EpRow e={e} />)}</ul>

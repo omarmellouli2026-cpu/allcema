@@ -5,7 +5,7 @@ const f = s.facts;
 ---
 <div class={s.image ? (s.art ? 'poster has-img art' : 'poster has-img') : 'poster'} style={`--h:${s.hue}`} aria-hidden="true">
   {s.image && <img class="p-img" src={s.image} alt="" width="540" height="805" loading="lazy" decoding="async" />}
-  <span class="p-count">{s.upcoming ? 'رمضان ' + f.year : num(s.count) + (s.count === 1 ? ' حلقة' : ' حلقات')}</span>
+  <span class="p-count">{s.isFilm ? 'فيلم' : s.upcoming ? 'رمضان ' + f.year : num(s.count) + (s.count === 1 ? ' حلقة' : ' حلقات')}</span>
   <span class="p-title">{s.title}</span>
   <span class="p-year">{f.year || ''}</span>
 </div>

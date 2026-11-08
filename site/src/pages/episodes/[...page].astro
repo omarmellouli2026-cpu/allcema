@@ -16,7 +16,7 @@ const names = [...new Set(page.data.map((e) => e.series.title))].slice(0, 3);
 const withEps = live.filter((s) => s.count > 0);
 const top = page.data[0];
 const description = !top ? 'ملخصات حلقات المسلسلات المصرية على Allcema.' : cur === 1
-  ? `أحدث ملخصات حلقات المسلسلات المصرية على Allcema: ${page.total} ملخصًا لـ ${withEps.length} مسلسلًا، آخرها حلقة ${num(top.ep)} من مسلسل ${top.series.title}.`
+  ? `أحدث ملخصات حلقات المسلسلات المصرية على Allcema: ${page.total} ملخصًا لحلقات مسلسلات جارية، آخرها حلقة ${num(top.ep)} من مسلسل ${top.series.title}.`
   : `ملخصات حلقات من مسلسلات ${joinAr(names)} وغيرها، الصفحة ${num(cur)} من ${num(last)}.`;
 const days = [];
 for (const e of page.data) {

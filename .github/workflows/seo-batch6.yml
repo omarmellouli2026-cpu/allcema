@@ -1,0 +1,31 @@
+name: seo-batch6
+# يُنفَّذ مرة واحدة عند حفظ هذا الملف: إزالة الساعات غير الموثوقة من «أين يُعرض» وإبقاء أسماء القنوات مع رابط الجدول
+on:
+  push:
+    paths:
+      - ".github/workflows/seo-batch6.yml"
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PAYLOAD: "H4sIAAai8GoC/7VVzW7bRhC+8ymm2ybmthJpB0EQyKICNz+ogcQOktwcw6HIpcSK2l3srqwEtg5pHDc1CvQBemsPct0mrhGggPsk5Nt0dinJDeweK0LL5ezMN9/8cPg5NL9sQiLSnPdaMDJZ87aVeA/WH95/ChHsTVbh0eY9u93aXoW1x4/vb9ybPXy9vuE0auUtolUSJmIoBWfc6HAtVwiqg1gbJcg2qqqlpaVms+klgmsDe5DBBKVr9jyQSki9Ojsqclwi8LPA7O7ENQ7s76NXGmR5YZjy/ZhC1IE4SPox56ygc9vZs7YkgyDgbAxPmfEtZDCM5WVDun3hlg/QLAvGQg128hSuX4eN0bCL7hYyCh1Yhjvwom+M1K0wZEWSczZEPDEMrVL4xd4lo0lodnujPGUvoAVLS6ueTcPenGpQMN4zfYeMLttpvgtJEWsdka54STrt/o1O+Wt1VB0CLj+V5+VZ+Vc7RKkH0JZz3XzYayaxJKDNq4JFZBirXs5by4i6siwR58IYyml1UJ5Xb6sDwNtB9UOrHUoLd0HKJSvpu2z9mxLWAyl1O6g5aYfdTjvEww6dXMmlYx1V31WH1btyWp5AeVy+Lz+Wx1D+Un4oz6A8wefT6qj8HZDQMW6m1aHVtGtgjz/g/qB6DcjVQpyjyumMfh3JDO8YJafVG0CtE7z+Rr0z626KxyfVW9Sd4v9H6+ZPBHxjN1NANzOYjxbccURl5ITXb1B9b3nsuca4A+1O+bOl9IdlgEv1zqbPBniJ23snPoLqNS7tGPqKZZHDmYDBujATkZ1uEfMBAcWKiHCRiaIQY+BCSMaZwg3aMKWYWlQ0EYVQrd1Y+c2mznsU03tq3cxpLPLcDmOsS8c12ySwpa2rNPHwFfS8HF9SZUDoBuhXuHRjzW7d9J5sbj7D/hc6YHw3V4IHyNMnVkwaQHRuGKFeyjJQqS9pC5mbkeJgCftoJWPTD74VOfetSQMkbQDj9XCJiBsuhAaKxalfw4yVL5ECbWHvAGSydn4ZZtWKh/GApbnSC0/4wOMh8zPn5yW+4DtiED1TI2YNLKcM0cmYXMVirDAaX1MviZM+q+dYJhSghSjSBti5kXM3+2p2dqA4XZcUSQGVXRrcaZ6Bxgkw4sZHcwqfRbBS29mfxAmGiVzbuPvN5hN4sLb+EPxrKW0RuPaJWcO6J/vEcdhq3V7exmzJIk6YT55zW4PneKMYHpYtwJCNv1L7d8y2pJ2yemEzD4TOI9M2pDoIjH6ofazhvAaf6LiJ/t86OFkGTM10629CHWwyUnbO27TYlMwr5Yqjr24RCjhsGBAyz2MNju1vHNuRmvvHbaDwY5FLlw0KX4G94+2CWdfa4Idpwf1/7azuopHqNyjo3rqZMmw1FFDqzcqOkEkfYimLnKWEev8ADwrsfXQHAAA="
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Apply patch
+        run: echo "$PAYLOAD" | base64 -d | gunzip > /tmp/patch.py && python3 /tmp/patch.py
+      - name: Verify build
+        working-directory: site
+        run: npm install && npm run build
+      - name: Commit
+        run: |
+          git config user.name "allcema-bot"; git config user.email "bot@users.noreply.github.com"
+          git add -A site
+          git diff --cached --quiet || (git commit -m "site: show channels only in where-to-watch (times are viewer-timezone dependent)" && git pull --rebase && git push)

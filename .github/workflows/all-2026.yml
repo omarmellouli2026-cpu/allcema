@@ -1,0 +1,94 @@
+name: publish-all-2026
+# كل أعمال مصر 2026 على دفعات: يختار من قاعدة elcinema ما لم يُنشر بعد (يستبعد الإذاعي والبرامج والقصير)
+on:
+  schedule:
+    - cron: "41 1,13 * * *"
+  push:
+    paths: [".github/workflows/all-2026.yml"]
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: max new articles per step this run
+        default: "15"
+      recaps:
+        description: max episode recaps this run
+        default: "25"
+
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+
+jobs:
+  all2026:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      UA: elcinema-licensed-sync (${{ github.repository_owner }})
+      SER_BATCH: "10"
+      FILM_BATCH: "15"
+      LLM_PROVIDER: deepseek
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Pick the next unpublished Egyptian 2026 works
+        run: |
+          python3 - <<'PY'
+          import glob, os, sqlite3, unicodedata as ud
+          db = sqlite3.connect(glob.glob("elcinema_data/*.sqlite")[0])
+          SKIP = ("اذاعي", "إذاعي", "برنامج", "قصير", "رسوم", "توك شو", "مسرحية")
+          def ok(st):
+              s = ud.normalize("NFKC", st or "")
+              return not any(k in s for k in SKIP)
+          def pick(is_series, n):
+              rows = db.execute("""select w.work_id, w.status, (w.synopsis is not null and w.synopsis<>'') syn
+                  from works w left join site_items si on si.work_id=w.work_id
+                  where w.year=2026 and w.countries like '%مصر%' and w.is_series=?
+                    and (si.state is null or (si.state in ('held','error') and coalesce(si.attempts,0)<3))
+                  order by syn desc, w.work_id""", (is_series,)).fetchall()
+              return [str(r[0]) for r in rows if ok(r[1])][:n]
+          S = pick(1, int(os.environ.get("SER_BATCH", "10")))
+          F = pick(0, int(os.environ.get("FILM_BATCH", "15")))
+          with open(os.environ["GITHUB_ENV"], "a") as f:
+              f.write("S=%s\nF=%s\n" % (" ".join(S), " ".join(F)))
+          print("series", S, "films", F)
+          PY
+      - name: Fetch films from elcinema
+        run: if [ -n "$F" ]; then python elcinema_scraper.py fetch --ids $F --refresh --data-dir elcinema_data --user-agent "$UA"; fi
+      - name: Fetch series with episodes from elcinema
+        run: if [ -n "$S" ]; then python elcinema_scraper.py fetch --ids $S --refresh --data-dir elcinema_data --user-agent "$UA"; fi
+      - name: Write and publish film articles
+        run: >
+          if [ -n "$F" ]; then python elcinema_publish.py run --data-dir elcinema_data --no-only-series --only-films
+          --work-ids $F --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 15 }}
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
+      - name: Write and publish series articles
+        run: >
+          if [ -n "$S" ]; then python elcinema_publish.py run --data-dir elcinema_data
+          --work-ids $S --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 15 }}
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
+      - name: Write episode recaps for the new series
+        run: >
+          if [ -n "$S" ]; then python elcinema_recaps.py --data-dir elcinema_data
+          --work-ids $S --expect-episodes --retry-held-hours 5
+          --min-year 2026 --countries "مصر" --limit ${{ inputs.recaps || 25 }} --daily-cap 150
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
+      - name: Save data to repo
+        if: always()
+        run: |
+          git config user.name "elcinema-bot"; git config user.email "bot@users.noreply.github.com"
+          python - <<'PY'
+          import glob, sqlite3
+          for p in glob.glob("elcinema_data/*.sqlite"):
+              c = sqlite3.connect(p); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()
+          PY
+          git add -A elcinema_data
+          git diff --cached --quiet || (git commit -m "all-2026: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

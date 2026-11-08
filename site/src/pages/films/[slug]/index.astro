@@ -38,7 +38,7 @@ const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage
         <div class="meta-line">{m.at && <time datetime={String(m.at).slice(0, 10)}>{fmtDate(m.at)}</time>}<span>قراءة {minutes(m.mins)}</span></div>
         <Share path={m.path} title={m.headline || `فيلم ${m.title}`} />
       </div>
-      <div class="ph-poster"><Poster s={m} eager alt={`ملصق فيلم ${m.title}`} />{m.image && <p class="img-cap">ملصق الفيلم، حقوقه لأصحابه، ويُعرض هنا للتعريف بالعمل.</p>}</div>
+      <div class="ph-poster"><Poster s={m} eager alt={`ملصق فيلم ${m.title}`} />{m.image && <p class="img-cap">ملصق الفيلم، يُعرض بترخيص، وحقوقه لأصحابه.</p>}</div>
     </div>
   </div></section>
   <div class="wrap ep-layout">

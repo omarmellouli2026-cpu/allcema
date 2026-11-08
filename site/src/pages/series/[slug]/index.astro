@@ -47,7 +47,7 @@ if (!s.upcoming && ar?.faq?.length) schema.push({ '@context': 'https://schema.or
         {s.latest && <div class="ph-actions"><a class="btn" href={s.latest.path}>اقرأ ملخص الحلقة {s.latest.ep}</a>{s.count > 1 && <a class="btn ghost" href={s.episodes[0].path}>ابدأ من الحلقة {s.episodes[0].ep}</a>}</div>}
         {!s.upcoming && <Share path={s.path} title={`مسلسل ${s.title}: ملخصات الحلقات`} />}
       </div>
-      <div class="ph-poster"><Poster s={s} eager alt={s.art ? `رسم توضيحي لمسلسل ${s.title}` : `ملصق مسلسل ${s.title}`} />{s.image && <p class="img-cap">{s.art ? 'رسم توضيحي بالذكاء الاصطناعي مستوحى من اسم المسلسل، وليس الملصق الرسمي.' : 'ملصق المسلسل، حقوقه لأصحابه، ويُعرض هنا للتعريف بالعمل.'}</p>}</div>
+      <div class="ph-poster"><Poster s={s} eager alt={s.art ? `رسم توضيحي لمسلسل ${s.title}` : `ملصق مسلسل ${s.title}`} />{s.image && <p class="img-cap">{s.art ? 'رسم توضيحي بالذكاء الاصطناعي مستوحى من اسم المسلسل، وليس الملصق الرسمي.' : 'ملصق المسلسل، يُعرض بترخيص، وحقوقه لأصحابه.'}</p>}</div>
     </div>
     {s.count > 0 && <Strip eps={s.episodes} />}
   </div></section>

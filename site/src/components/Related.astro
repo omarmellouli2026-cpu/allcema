@@ -1,0 +1,6 @@
+---
+import Tile from './Tile.astro';
+const { list = [], title = 'أعمال مشابهة' } = Astro.props;
+---
+{list.length > 0 && <div class="wrap"><section class="section"><div class="sec-head"><h2>{title}</h2></div>
+  <div class="tiles">{list.map((x) => <Tile s={x} />)}</div></section></div>}

@@ -1,10 +1,10 @@
 ---
 import { num } from '../lib/data.js';
-const { s } = Astro.props;
+const { s, eager = false, alt = '' } = Astro.props;
 const f = s.facts;
 ---
-<div class={s.image ? (s.art ? 'poster has-img art' : 'poster has-img') : 'poster'} style={`--h:${s.hue}`} aria-hidden="true">
-  {s.image && <img class="p-img" src={s.image} alt="" width="540" height="805" loading="lazy" decoding="async" />}
+<div class={s.image ? (s.art ? 'poster has-img art' : 'poster has-img') : 'poster'} style={`--h:${s.hue}`} aria-hidden={alt ? undefined : 'true'}>
+  {s.image && <img class="p-img" src={s.image} alt={alt} width="540" height="805" loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : undefined} decoding="async" />}
   <span class="p-count">{s.isFilm ? 'فيلم' : s.upcoming ? 'رمضان ' + f.year : s.count ? num(s.count) + (s.count === 1 ? ' حلقة' : ' حلقات') : 'مسلسل'}</span>
   <span class="p-title">{s.title}</span>
   <span class="p-year">{f.year || ''}</span>

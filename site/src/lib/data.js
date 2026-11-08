@@ -61,6 +61,15 @@ export function linkList(kind, names) {
   const t = load().tax, by = kind === 'p' ? t.personBy : kind === 'g' ? t.genreBy : t.countryBy, base = kind === 'p' ? '/people/' : kind === 'g' ? '/genres/' : '/countries/';
   return [...new Set((names || []).map(norm).filter(Boolean))].map((n) => (by.has(n) ? `<a href="${base}${by.get(n).slug}/">${escH(n)}</a>` : escH(n))).join('، ');
 }
+// أعمال مشابهة: تشابه في الممثلين (×2) والمخرجين (×3) والأنواع والمؤلفين، مع أفضلية بسيطة لنفس النوع (مسلسل/فيلم)
+export function related(w, n = 4) {
+  const L = load(), pool = [...L.live.filter((x) => !x.noindex), ...L.films].filter((x) => x !== w);
+  const set = (a) => new Set((a || []).map(norm)), f = w.facts;
+  const C = set(f.cast), G = set(f.genres), Dr = set(f.directors), Wr = set(f.writers);
+  const hit = (a, S) => (a || []).reduce((c, x) => c + (S.has(norm(x)) ? 1 : 0), 0);
+  return pool.map((x) => ({ x, sc: hit(x.facts.cast, C) * 2 + hit(x.facts.directors, Dr) * 3 + hit(x.facts.genres, G) + hit(x.facts.writers, Wr) + (x.isFilm === w.isFilm ? 0.5 : 0) }))
+    .filter((r) => r.sc >= 2).sort((a, b) => b.sc - a.sc || String(b.x.at).localeCompare(String(a.x.at))).slice(0, n).map((r) => r.x);
+}
 export const minutes = (n) => (n === 1 ? 'دقيقة واحدة' : n === 2 ? 'دقيقتان' : n <= 10 ? `${n} دقائق` : `${n} دقيقة`);
 export const fmtDate = (iso) => {
   const d = new Date(iso);

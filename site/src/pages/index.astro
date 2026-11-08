@@ -2,9 +2,10 @@
 import Base from '../layouts/Base.astro';
 import EpRow from '../components/EpRow.astro';
 import Tile from '../components/Tile.astro';
-import { SITE_NAME, SITE_TAGLINE } from '../config.js';
+import Poster from '../components/Poster.astro';
+import { SITE_NAME } from '../config.js';
 import { load, desc } from '../lib/data.js';
-const { live: series, episodes, upcoming, films } = load();
+const { live: series, episodes, upcoming, films, tax } = load();
 const top = episodes[0] || null;
 // قائمة قصيرة: أحدث حلقة من كل مسلسل غير الظاهر في الأعلى، بحدّ أقصى 4
 const others = episodes.slice(1);
@@ -12,30 +13,39 @@ const seenS = new Set(top ? [top.series.title] : []);
 const rest = [];
 for (const e of others) { if (!seenS.has(e.series.title)) { seenS.add(e.series.title); rest.push(e); } if (rest.length >= 4) break; }
 for (const e of others) { if (rest.length >= 3) break; if (!rest.includes(e)) rest.push(e); }
-const schema = [{ '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url: new URL('/', Astro.site).href, inLanguage: 'ar',
-  potentialAction: { '@type': 'SearchAction', target: new URL('/search/?q={q}', Astro.site).href, 'query-input': 'required name=q' } }];
+const feat = top && top.series.image ? top.series : null;
+const abs = (p) => new URL(p, Astro.site).href;
+const kpis = [[series.length, 'مسلسلًا'], [films.length, 'فيلمًا'], [episodes.length, 'ملخص حلقة'], [tax.people.length, 'ممثلًا ومخرجًا']].filter((k) => k[0] > 0);
+const topGenres = tax.genres.slice(0, 8), topPeople = tax.people.slice(0, 12);
+const schema = [
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url: abs('/'), inLanguage: 'ar',
+    potentialAction: { '@type': 'SearchAction', target: abs('/search/?q={q}'), 'query-input': 'required name=q' } },
+  { '@context': 'https://schema.org', '@type': 'Organization', name: SITE_NAME, url: abs('/') },
+  ...(series.length ? [{ '@context': 'https://schema.org', '@type': 'ItemList', name: 'مسلسلات مصرية', itemListElement: series.slice(0, 10).map((s, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(s.path), name: s.title })) }] : []),
+];
 ---
-<Base title={SITE_NAME} description={SITE_TAGLINE} path="/" schema={schema} active="home">
+<Base title="ملخصات الحلقات والمسلسلات والأفلام المصرية الجديدة" description="اقرأ ملخص كل حلقة من المسلسلات المصرية بعد عرضها، وتعرّف على قصة المسلسلات والأفلام الجديدة وأبطالها ومواعيد عرضها على Allcema." path="/" schema={schema} active="home" image={feat ? feat.image : ''}>
   <section class="band hero"><div class="wrap hero-grid">
     <div>
-      <h1>ماذا حدث في الحلقة؟ ملخص كل حلقة بعد عرضها</h1>
-      <p class="lead">نتابع المسلسلات المعروضة ونكتب ما جرى في كل حلقة بأسلوبنا، مع تنبيه حرق واضح في أول كل ملخص.</p>
+      <span class="eyebrow">مسلسلات وأفلام مصرية</span>
+      <h1>ملخصات المسلسلات المصرية وأخبار الأفلام الجديدة</h1>
+      <p class="lead">نكتب ما جرى في كل حلقة بعد عرضها، ونعرّفك بقصة كل مسلسل وفيلم وأبطاله، مع تنبيه حرق واضح في أول كل ملخص.</p>
+      <form class="hsearch" action="/search/" method="get" role="search">
+        <input type="search" name="q" placeholder="ابحث عن مسلسل أو فيلم أو ممثل" aria-label="ابحث في الموقع" autocomplete="off" />
+        <button type="submit">بحث</button>
+      </form>
       {top && <a class="feature" href={top.path}>
         <b>مسلسل {top.series.title} حلقة {top.ep}</b>
         <span class="ex">{desc(top.excerpt, 170)}</span>
         <span class="btn">اقرأ ملخص الحلقة</span>
       </a>}
     </div>
-    {top && <div class="num hero-num" aria-hidden="true">{top.numeral}<small>{top.series.title}</small></div>}
+    {feat ? <a class="hero-poster" href={feat.path} aria-label={`مسلسل ${feat.title}`}><Poster s={feat} eager alt={`ملصق مسلسل ${feat.title}`} /></a>
+      : top && <div class="num hero-num" aria-hidden="true">{top.numeral}<small>{top.series.title}</small></div>}
   </div></section>
 
   <div class="wrap">
-    <div class="stats" aria-label="أرقام الموقع">
-      <div><b>{series.length}</b><span>مسلسلًا</span></div>
-      <div><b>{films.length}</b><span>فيلمًا</span></div>
-      <div><b>{episodes.length}</b><span>ملخص حلقة</span></div>
-      <div><b>{upcoming.length}</b><span>مسلسل رمضان 2027</span></div>
-    </div>
+    {kpis.length > 0 && <div class="kpis">{kpis.map(([n, l]) => <div><b>{n}</b><span>{l}</span></div>)}</div>}
     {rest.length > 0 && <section class="section">
       <div class="sec-head"><h2>آخر الحلقات</h2><a href="/episodes/">كل الحلقات</a></div>
       <ul class="ep-list compact">{rest.map((e) => <EpRow e={e} />)}</ul>
@@ -48,10 +58,24 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'WebSite', name: SI
       <div class="sec-head"><h2>أفلام مصرية جديدة</h2><a href="/films/">كل الأفلام</a></div>
       <div class="tiles row">{films.slice(0, 5).map((m) => <Tile s={m} />)}</div>
     </section>}
+    {(topGenres.length > 0 || topPeople.length > 0) && <section class="section explore">
+      {topGenres.length > 0 && <div>
+        <div class="sec-head"><h2>تصفّح حسب النوع</h2><a href="/genres/">كل الأنواع</a></div>
+        <div class="chips">{topGenres.map((g) => <a class="chip" href={`/genres/${g.slug}/`}>{g.name}<small>{g.count}</small></a>)}</div>
+      </div>}
+      {topPeople.length > 0 && <div>
+        <div class="sec-head"><h2>الأكثر حضورًا</h2><a href="/people/">كل الأسماء</a></div>
+        <div class="chips">{topPeople.map((p) => <a class="chip" href={`/people/${p.slug}/`}>{p.name}<small>{p.count}</small></a>)}</div>
+      </div>}
+    </section>}
     {upcoming.length > 0 && <a class="rmd" href="/ramadan-2027/">
       <div><b>رمضان 2027 قادم</b><span>{upcoming.length} مسلسلًا معلنًا حتى الآن، مع الأبطال وما نعرفه عن كل عمل.</span></div>
       <span class="btn">تصفّح المسلسلات المعلنة</span>
     </a>}
+    {(series.length > 0 || films.length > 0) && <section class="about-home">
+      <h2>عن Allcema</h2>
+      <p>Allcema موقع عربي يتابع <a href="/series/">المسلسلات المصرية</a> و<a href="/films/">الأفلام المصرية</a> الجديدة. لكل عمل صفحة تضم القصة والأبطال وفريق العمل، ونكتب لكل حلقة ملخصًا بصياغتنا بعد عرضها. يمكنك أيضًا التنقل بين <a href="/people/">الممثلين والمخرجين</a> و<a href="/genres/">الأنواع</a> للوصول إلى ما يناسبك.</p>
+    </section>}
     {rest.length === 0 && series.length === 0 && films.length === 0 && <p class="empty">لم تُنشر ملخصات بعد. تعود الصفحة إلى العمل فور نشر أول حلقة.</p>}
   </div>
 </Base>

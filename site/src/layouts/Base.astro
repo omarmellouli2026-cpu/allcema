@@ -12,9 +12,11 @@ const LD = load();
 const footSeries = LD.live.slice(0, 6);
 const hasUp = LD.upcoming.length > 0;
 const hasFilms = LD.films.length > 0;
-const { title, description = SITE_TAGLINE, path = '/', schema = [], noindex = false, type = 'website', active = '', image = '' } = Astro.props;
+const { title, description = SITE_TAGLINE, path = '/', schema = [], noindex = false, type = 'website', active = '', image = '', published = '', modified = '' } = Astro.props;
 const imgUrl = image ? new URL(image, Astro.site).href : '';
 const url = new URL(path, Astro.site).href;
+const iso = (d) => { const t = new Date(d); return d && !isNaN(t) ? t.toISOString() : ''; };
+const pubIso = iso(published), modIso = iso(modified);
 const fullTitle = title === SITE_NAME ? `${SITE_NAME} | ${SITE_TAGLINE}` : `${title} | ${SITE_NAME}`;
 const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المسلسلات'], ...(hasFilms ? [['films', '/films/', 'الأفلام']] : []), ['episodes', '/episodes/', 'الحلقات'], ['search', '/search/', 'بحث']];
 ---
@@ -34,7 +36,14 @@ const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المس
   <meta property="og:url" content={url} />
   <meta property="og:locale" content="ar_AR" />
   {imgUrl && <meta property="og:image" content={imgUrl} />}
-  <meta name="twitter:card" content={imgUrl ? 'summary_large_image' : 'summary'} />
+  {imgUrl && <meta property="og:image:alt" content={title} />}
+  {type === 'article' && pubIso && <meta property="article:published_time" content={pubIso} />}
+  {type === 'article' && modIso && <meta property="article:modified_time" content={modIso} />}
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  {imgUrl && <meta name="twitter:image" content={imgUrl} />}
+  <link rel="alternate" hreflang="ar" href={url} />
   <link rel="alternate" type="application/rss+xml" title={SITE_NAME} href="/rss.xml" />
   <meta name="theme-color" content="#1c2140" />
   <slot name="head" />

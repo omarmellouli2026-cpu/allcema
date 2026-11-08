@@ -4,7 +4,8 @@ import EpRow from '../../../components/EpRow.astro';
 import Strip from '../../../components/Strip.astro';
 import Poster from '../../../components/Poster.astro';
 import Airings from '../../../components/Airings.astro';
-import { load, joinAr, num, linkList } from '../../../lib/data.js';
+import Related from '../../../components/Related.astro';
+import { load, joinAr, num, linkList, related, desc as clip } from '../../../lib/data.js';
 export function getStaticPaths() {
   return load().series.map((s) => ({ params: { slug: s.slug }, props: { s } }));
 }
@@ -17,14 +18,19 @@ const rows = s.upcoming ? [['التصنيف', joinAr(f.genres)], ['بلد الإ
   ['البطولة', linkList('p', f.cast)], ['اللغة', joinAr(f.languages)]].filter((r) => r[1]);
 const abs = (p) => new URL(p, Astro.site).href;
 const schema = [{ '@context': 'https://schema.org', '@type': 'TVSeries', name: s.title, ...(s.alt ? { alternateName: s.alt } : {}), url: abs(s.path),
-  inLanguage: 'ar', ...(f.year ? { datePublished: String(f.year) } : {}), ...(f.genres?.length ? { genre: f.genres } : {}),
+  description: clip(s.excerpt || s.blurb, 300), inLanguage: 'ar', ...(s.image ? { image: abs(s.image) } : {}),
+  ...(f.year ? { datePublished: String(f.year) } : {}), ...(s.at && !s.upcoming ? { dateModified: String(s.at) } : {}),
+  ...(s.count ? { numberOfEpisodes: s.count } : {}), ...(f.genres?.length ? { genre: f.genres } : {}),
+  ...(f.countries?.length ? { countryOfOrigin: f.countries.map((n) => ({ '@type': 'Country', name: n })) } : {}),
   ...(f.cast?.length ? { actor: f.cast.map((n) => ({ '@type': 'Person', name: n })) } : {}),
-  ...(f.directors?.length ? { director: f.directors.map((n) => ({ '@type': 'Person', name: n })) } : {}) },
+  ...(f.directors?.length ? { director: f.directors.map((n) => ({ '@type': 'Person', name: n })) } : {}),
+  ...(s.count ? { episode: s.episodes.slice(-50).map((e) => ({ '@type': 'TVEpisode', episodeNumber: e.ep, name: `الحلقة ${e.ep}`, url: abs(e.path) })) } : {}) },
   { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: abs('/') }, { '@type': 'ListItem', position: 2, name: 'المسلسلات', item: abs('/series/') },
     { '@type': 'ListItem', position: 3, name: s.title, item: abs(s.path) }] }];
+if (!s.upcoming && s.article?.faq?.length) schema.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: s.article.faq.map((x) => ({ '@type': 'Question', name: x.q, acceptedAnswer: { '@type': 'Answer', text: x.a } })) });
 ---
-<Base title={s.upcoming ? `مسلسل ${s.title} رمضان ${f.year}: ما نعرفه حتى الآن` : `مسلسل ${s.title}: ملخصات كل الحلقات`} description={s.blurb} path={s.path} schema={schema} active="series" image={s.image} noindex={s.noindex}>
+<Base title={s.upcoming ? `مسلسل ${s.title} رمضان ${f.year}: ما نعرفه حتى الآن` : `مسلسل ${s.title}${f.year ? ' ' + f.year : ''}: القصة والأبطال وملخصات الحلقات`} description={clip(s.excerpt || s.blurb, 160)} path={s.path} schema={schema} active="series" type={s.upcoming ? 'website' : 'video.tv_show'} image={s.image} noindex={s.noindex}>
   <section class="band page-head"><div class="wrap">
     <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span><a href="/series/">المسلسلات</a><span>/</span>{s.title}</nav>
     <div class="ph-grid">
@@ -34,7 +40,7 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'TVSeries', name: s
         <ul class="facts">{[f.kind, f.year, joinAr(f.countries), f.genres?.[0]].filter(Boolean).map((x) => <li>{x}</li>)}</ul>
         {s.latest && <div class="ph-actions"><a class="btn" href={s.latest.path}>اقرأ ملخص الحلقة {s.latest.ep}</a>{s.count > 1 && <a class="btn ghost" href={s.episodes[0].path}>ابدأ من الحلقة {s.episodes[0].ep}</a>}</div>}
       </div>
-      <div class="ph-poster"><Poster s={s} />{s.image && <p class="img-cap">{s.art ? 'رسم توضيحي بالذكاء الاصطناعي مستوحى من اسم المسلسل، وليس الملصق الرسمي.' : 'ملصق المسلسل، منشور بإذن من الجهة المالكة.'}</p>}</div>
+      <div class="ph-poster"><Poster s={s} eager alt={s.art ? `رسم توضيحي لمسلسل ${s.title}` : `ملصق مسلسل ${s.title}`} />{s.image && <p class="img-cap">{s.art ? 'رسم توضيحي بالذكاء الاصطناعي مستوحى من اسم المسلسل، وليس الملصق الرسمي.' : 'ملصق المسلسل، منشور بإذن من الجهة المالكة.'}</p>}</div>
     </div>
     {s.count > 0 && <Strip eps={s.episodes} />}
   </div></section>
@@ -54,4 +60,5 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'TVSeries', name: s
       {!s.upcoming && <Airings f={f} />}
     </aside>
   </div>
+  {!s.upcoming && <Related list={related(s, 4)} />}
 </Base>

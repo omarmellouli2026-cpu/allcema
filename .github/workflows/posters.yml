@@ -1,0 +1,102 @@
+name: posters
+# ينزّل ملصقات الأعمال المنشورة من elcinema (بترخيص كتابي من مالك الموقع) ويحفظها في site/public/media/posters
+# يعمل عند حفظ هذا الملف، ويوميًا لإضافة ملصقات الأعمال الجديدة، أو يدويًا (force=1 لإعادة التنزيل)
+on:
+  push:
+    paths:
+      - ".github/workflows/posters.yml"
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "1 = أعد تنزيل كل الملصقات"
+        default: "0"
+
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+
+jobs:
+  posters:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      UA: elcinema-licensed-sync (${{ github.repository_owner }})
+      FORCE: ${{ inputs.force || '0' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install requests pillow
+      - name: Download posters
+        run: |
+          python - <<'PY'
+          import glob, io, json, os, re, sqlite3, time
+          import requests
+          from PIL import Image
+          OUT = "site/public/media/posters"
+          os.makedirs(OUT, exist_ok=True)
+          items = {}
+          for line in open("elcinema_data/site_items.jsonl", encoding="utf-8"):
+              line = line.strip()
+              if not line: continue
+              try: o = json.loads(line)
+              except Exception: continue
+              items[o["work_id"]] = o
+          ids = sorted(w for w, o in items.items() if w > 0 and o.get("status") == "publish")
+          urls = {}
+          for p in glob.glob("elcinema_data/*.sqlite"):
+              try:
+                  c = sqlite3.connect(p)
+                  for wid, u in c.execute("SELECT work_id, poster_url FROM works WHERE poster_url IS NOT NULL AND poster_url<>''"):
+                      urls[wid] = u
+                  c.close()
+              except Exception as e:
+                  print("skip db", p, e)
+          s = requests.Session()
+          s.headers.update({"User-Agent": os.environ["UA"], "Referer": "https://elcinema.com/", "Accept": "image/avif,image/webp,image/*,*/*;q=0.8"})
+          def candidates(u):
+              out = []
+              m = re.search(r"^(.*?/uploads/)_\d+x\d*_([0-9a-f]+)\.(jpg|jpeg|png|webp)$", u)
+              if m:
+                  base, h, ext = m.groups()
+                  out += [f"{base}{h}.{ext}", f"{base}_600x_{h}.{ext}", f"{base}_500x_{h}.{ext}"]
+              out.append(u)
+              return out
+          done = skipped = missing = failed = 0
+          for wid in ids:
+              dest = f"{OUT}/{wid}.jpg"
+              if os.path.exists(dest) and os.path.getsize(dest) > 2000 and os.environ.get("FORCE") != "1":
+                  skipped += 1; continue
+              u = urls.get(wid)
+              if not u:
+                  print("no poster url", wid); missing += 1; continue
+              ok = False
+              for cu in candidates(u):
+                  try:
+                      r = s.get(cu, timeout=40)
+                  except Exception as e:
+                      print("err", wid, cu, e); time.sleep(2); continue
+                  time.sleep(2.0)
+                  if r.status_code == 200 and r.headers.get("Content-Type", "").startswith("image") and len(r.content) > 4000:
+                      try:
+                          im = Image.open(io.BytesIO(r.content)).convert("RGB")
+                          if im.width > 600:
+                              im = im.resize((600, round(im.height * 600 / im.width)), Image.LANCZOS)
+                          im.save(dest, "JPEG", quality=84, optimize=True, progressive=True)
+                          print("ok", wid, im.size, cu); done += 1; ok = True; break
+                      except Exception as e:
+                          print("bad image", wid, cu, e)
+              if not ok:
+                  failed += 1; print("FAILED", wid, u)
+          print(f"posters: downloaded={done} skipped={skipped} no_url={missing} failed={failed}")
+          PY
+      - name: Save posters to repo
+        if: always()
+        run: |
+          git config user.name "allcema-bot"; git config user.email "bot@users.noreply.github.com"
+          git add -A site/public/media/posters
+          git diff --cached --quiet || (git commit -m "posters: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

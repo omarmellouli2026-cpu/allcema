@@ -104,51 +104,6 @@ function blurb(f, up) {
 }
 
 let cache;
-export const minutes = (n) => (n === 1 ? 'دقيقة واحدة' : n === 2 ? 'دقيقتان' : n <= 10 ? `${n} دقائق` : `${n} دقيقة`);
-export const fmtDate = (iso) => {
-  const d = new Date(iso);
-  return isNaN(d) ? '' : d.toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-};
-export const desc = (s, n = 155) => {
-  const t = String(s || '').replace(/\s+/g, ' ').trim();
-  return t.length <= n ? t : t.slice(0, n - 1).replace(/\s+\S*$/, '') + '…';
-};
-
-// تفكيك مقال الحلقة المخزَّن كـ HTML إلى أجزاء يعيد القالب ترتيبها
-export function parseArticle(html) {
-  let note = '', spoiler = false;
-  let body = String(html || '').replace(/<p><small>([\s\S]*?)<\/small><\/p>/g, (m, t) => { note = strip(t); return ''; });
-  body = body.replace(/<p><strong>تنبيه[^<]*<\/strong><\/p>/, () => { spoiler = true; return ''; });
-  const parts = body.split(/<h2>([\s\S]*?)<\/h2>/);
-  const lead = parts[0].trim();
-  const sections = [];
-  let card = [], faq = [];
-  for (let i = 1; i < parts.length; i += 2) {
-    const title = strip(parts[i]), inner = (parts[i + 1] || '').trim();
-    if (title === 'بطاقة العمل') card = [...inner.matchAll(/<tr><th>([\s\S]*?)<\/th><td>([\s\S]*?)<\/td><\/tr>/g)].map((m) => [strip(m[1]), strip(m[2])]);
-    else if (title === 'أسئلة شائعة') faq = [...inner.matchAll(/<h3>([\s\S]*?)<\/h3>\s*<p>([\s\S]*?)<\/p>/g)].map((m) => ({ q: strip(m[1]), a: strip(m[2]) }));
-    else if (title === 'أعمال ذات صلة') continue;
-    else sections.push({ title, html: inner });
-  }
-  return { spoiler, lead, sections, card, faq, note };
-}
-
-function blurb(f, up) {
-  if (up) {
-    const u = [`مسلسل مصري مرتقب ضمن أعمال رمضان ${f.year}`];
-    if (f.cast?.length) u.push('بطولة ' + joinAr(f.cast.slice(0, 4)));
-    if (f.directors?.length) u.push('وإخراج ' + joinAr(f.directors));
-    return u.join('، ') + '.';
-  }
-  const kind = f.kind || f.category || 'عمل';
-  const a = [`${kind}${f.countries?.length ? ' من إنتاج ' + joinAr(f.countries) : ''}${f.year ? ' عُرض عام ' + f.year : ''}`];
-  if (f.genres?.length) a.push('من فئة ' + joinAr(f.genres));
-  if (f.cast?.length) a.push('بطولة ' + joinAr(f.cast.slice(0, 4)));
-  if (f.directors?.length) a.push('وإخراج ' + joinAr(f.directors));
-  return a.join('، ') + '.';
-}
-
-let cache;
 export function load() {
   if (cache) return cache;
   const recs = readJsonl('recaps.jsonl');

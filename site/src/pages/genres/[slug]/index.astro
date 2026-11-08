@@ -15,7 +15,7 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'CollectionPage', n
     { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: abs('/') }, { '@type': 'ListItem', position: 2, name: 'الأنواع', item: abs('/genres/') },
     { '@type': 'ListItem', position: 3, name: g.name, item: abs(path) }] }];
 ---
-<Base title={`أعمال ${g.name} المصرية`} description={description} path={path} schema={schema} active="genres">
+<Base title={`أعمال ${g.name} المصرية`} description={description} path={path} schema={schema} active="genres" noindex={g.count < 6}>
   <section class="band page-head"><div class="wrap">
     <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span><a href="/genres/">الأنواع</a><span>/</span>{g.name}</nav>
     <h1>أعمال {g.name} المصرية</h1>

@@ -12,12 +12,10 @@ export function allUrls(site) {
   if (films.length) out.push({ loc: abs('/films/'), lastmod: latest(films) });
   for (const m of films) out.push({ loc: abs(m.path), lastmod: String(m.at), img: m.image ? abs(m.image) : '' });
   const lm = latest([...series, ...films]);
-  if (tax.people.length) out.push({ loc: abs('/people/'), lastmod: lm });
-  for (const x of tax.people) out.push({ loc: abs(`/people/${x.slug}/`), lastmod: latest(x.list) });
   if (tax.genres.length) out.push({ loc: abs('/genres/'), lastmod: lm });
-  for (const x of tax.genres) out.push({ loc: abs(`/genres/${x.slug}/`), lastmod: latest(x.list) });
+  for (const x of tax.genres) if (x.count >= 6) out.push({ loc: abs(`/genres/${x.slug}/`), lastmod: latest(x.list) });
   for (const x of tax.countries) out.push({ loc: abs(`/countries/${x.slug}/`), lastmod: latest(x.list) });
-  for (const p of ['/about/', '/privacy/', '/contact/']) out.push({ loc: abs(p), lastmod: '' });
+  for (const p of ['/about/', '/privacy/', '/contact/', '/copyright/']) out.push({ loc: abs(p), lastmod: '' });
   return out;
 }
 export const CHUNK = 40000;

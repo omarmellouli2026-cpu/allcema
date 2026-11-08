@@ -3,12 +3,13 @@ import Base from '../../layouts/Base.astro';
 import { CONTACT_EMAIL } from '../../config.js';
 const real = CONTACT_EMAIL && !/example\.com$/.test(CONTACT_EMAIL);
 ---
-<Base title="اتصل بنا" path="/contact/" description="راسلنا للتصحيحات والاقتراحات.">
+<Base title="اتصل بنا" path="/contact/" description="راسلنا للتصحيحات والاقتراحات وطلبات إزالة المحتوى.">
   <section class="band page-head"><div class="wrap"><nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>اتصل بنا</nav><h1>اتصل بنا</h1></div></section>
   <div class="wrap"><div class="plain prose">
     {real
-      ? <p>للتصحيحات والاقتراحات وطلبات الإزالة راسلنا على: <a href={`mailto:${CONTACT_EMAIL}`} style="color:var(--sig);font-weight:600">{CONTACT_EMAIL}</a></p>
-      : <p>نجهّز عنوان المراسلة. إلى حين إضافته يمكنك متابعة الموقع عبر <a href="/rss.xml" style="color:var(--sig);font-weight:600">RSS</a>.</p>}
-    <p>عند الإبلاغ عن خطأ اذكر اسم المسلسل ورقم الحلقة وما تراه غير صحيح.</p>
+      ? <p>للتصحيحات والاقتراحات والاستفسارات وطلبات الإزالة راسلنا على: <a href={`mailto:${CONTACT_EMAIL}`} style="color:var(--sig);font-weight:600">{CONTACT_EMAIL}</a></p>
+      : <p>نجهّز عنوان المراسلة. إلى حينه يمكنك متابعة الموقع عبر <a href="/rss.xml" style="color:var(--sig);font-weight:600">RSS</a>.</p>}
+    <p>عند الإبلاغ عن خطأ اذكر اسم العمل ورقم الحلقة وما تراه غير صحيح.</p>
+    <p>لطلبات الإزالة من أصحاب الحقوق، راجع صفحة «<a href="/copyright/" style="color:var(--sig)">حقوق النشر والإبلاغ</a>».</p>
   </div></div>
 </Base>

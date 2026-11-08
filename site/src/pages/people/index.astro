@@ -7,7 +7,7 @@ const abs = (x) => new URL(x, Astro.site).href;
 const schema = [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'الممثلون والمخرجون', url: abs('/people/'),
   mainEntity: { '@type': 'ItemList', itemListElement: people.slice(0, 100).map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(`/people/${p.slug}/`), name: p.name })) } }];
 ---
-<Base title="الممثلون والمخرجون" description="أبرز الممثلين والمخرجين في الأعمال المصرية الجديدة، مع أعمال كل منهم من مسلسلات وأفلام." path="/people/" schema={schema} active="people">
+<Base title="الممثلون والمخرجون" description="أبرز الممثلين والمخرجين في الأعمال المصرية الجديدة، مع أعمال كل منهم من مسلسلات وأفلام." path="/people/" schema={schema} active="people" noindex>
   <section class="band page-head"><div class="wrap">
     <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>الممثلون والمخرجون</nav>
     <h1>الممثلون والمخرجون</h1>

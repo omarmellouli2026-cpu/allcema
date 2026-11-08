@@ -1,4 +1,4 @@
-import { load } from './data.js';
+import { load, trending } from './data.js';
 export function allUrls(site) {
   const { series, episodes, films, tax } = load();
   const abs = (p) => new URL(p, site).href;
@@ -15,6 +15,8 @@ export function allUrls(site) {
   if (tax.genres.length) out.push({ loc: abs('/genres/'), lastmod: lm });
   for (const x of tax.genres) if (x.count >= 6) out.push({ loc: abs(`/genres/${x.slug}/`), lastmod: latest(x.list) });
   for (const x of tax.countries) out.push({ loc: abs(`/countries/${x.slug}/`), lastmod: latest(x.list) });
+  const TR = trending();
+  if (TR.series.length + TR.films.length) out.push({ loc: abs('/trending/'), lastmod: TR.date });
   for (const p of ['/about/', '/privacy/', '/contact/', '/copyright/']) out.push({ loc: abs(p), lastmod: '' });
   return out;
 }

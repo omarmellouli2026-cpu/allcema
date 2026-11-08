@@ -4,9 +4,11 @@ import EpRow from '../components/EpRow.astro';
 import Tile from '../components/Tile.astro';
 import Poster from '../components/Poster.astro';
 import { SITE_NAME } from '../config.js';
-import { load, desc } from '../lib/data.js';
+import { load, desc, trending } from '../lib/data.js';
 const { live: series, episodes, upcoming, films, tax } = load();
 const top = episodes[0] || null;
+const TR = trending();
+const hot = [...TR.series.slice(0, 3), ...TR.films.slice(0, 2)].map((e) => e.work);
 // قائمة قصيرة: أحدث حلقة من كل مسلسل غير الظاهر في الأعلى، بحدّ أقصى 4
 const others = episodes.slice(1);
 const seenS = new Set(top ? [top.series.title] : []);
@@ -46,6 +48,10 @@ const schema = [
 
   <div class="wrap">
     {kpis.length > 0 && <div class="kpis">{kpis.map(([n, l]) => <div><b>{n}</b><span>{l}</span></div>)}</div>}
+    {hot.length > 0 && <section class="section">
+      <div class="sec-head"><h2>الأكثر مشاهدة اليوم</h2><a href="/trending/">الترتيب الكامل</a></div>
+      <div class="tiles row">{hot.map((x) => <Tile s={x} />)}</div>
+    </section>}
     {rest.length > 0 && <section class="section">
       <div class="sec-head"><h2>آخر الحلقات</h2><a href="/episodes/">كل الحلقات</a></div>
       <ul class="ep-list compact">{rest.map((e) => <EpRow e={e} />)}</ul>

@@ -6,12 +6,14 @@ import Credits from '../../../components/Credits.astro';
 import Airings from '../../../components/Airings.astro';
 import Related from '../../../components/Related.astro';
 import Share from '../../../components/Share.astro';
-import { load, joinAr, desc, fmtDate, minutes, related } from '../../../lib/data.js';
+import { load, joinAr, desc, fmtDate, minutes, related, linkList } from '../../../lib/data.js';
 export function getStaticPaths() {
   return load().films.map((m) => ({ params: { slug: m.slug }, props: { m } }));
 }
 const { m } = Astro.props;
 const f = m.facts, p = m.parsed;
+const KIND = { 'التصنيف': 'g', 'بلد الإنتاج': 'c', 'الإخراج': 'p', 'التأليف': 'p', 'البطولة': 'p' };
+const cardRows = p.card.map(([k, v]) => KIND[k] ? [k, linkList(KIND[k], String(v).split(/[،,]\s*/)), true] : [k, v, false]);
 const rel = related(m, 4);
 const others = load().films.filter((x) => x !== m && !rel.includes(x)).slice(0, 4);
 const abs = (x) => new URL(x, Astro.site).href;
@@ -49,7 +51,7 @@ const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage
       {p.note && <p class="note">{p.note}</p>}
     </article>
     <aside>
-      {p.card.length > 0 && <div class="box"><h2>بطاقة الفيلم</h2><dl class="card">{p.card.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}</dl></div>}
+      {cardRows.length > 0 && <div class="box"><h2>بطاقة الفيلم</h2><dl class="card">{cardRows.map(([k, v, h]) => <div><dt>{k}</dt>{h ? <dd set:html={v} /> : <dd>{v}</dd>}</div>)}</dl></div>}
       <Credits f={f} />
       <Airings f={f} />
     </aside>

@@ -7,11 +7,12 @@ import '@fontsource/noto-naskh-arabic/arabic-400.css';
 import '@fontsource/noto-naskh-arabic/arabic-600.css';
 import '../styles/site.css';
 import { SITE_NAME, SITE_TAGLINE, DISCLOSURE } from '../config.js';
-import { load } from '../lib/data.js';
+import { load, trending } from '../lib/data.js';
 const LD = load();
 const footSeries = LD.live.slice(0, 6);
 const hasUp = LD.upcoming.length > 0;
 const hasFilms = LD.films.length > 0;
+const TR = trending();
 const { title, description = SITE_TAGLINE, path = '/', schema = [], noindex = false, type = 'website', active = '', image = '', published = '', modified = '' } = Astro.props;
 const imgUrl = new URL(image || '/og-default.png', Astro.site).href;
 const url = new URL(path, Astro.site).href;
@@ -19,7 +20,7 @@ const iso = (d) => { const t = new Date(d); return d && !isNaN(t) ? t.toISOStrin
 const pubIso = iso(published), modIso = iso(modified);
 const fullTitle = title === SITE_NAME ? `${SITE_NAME} | ${SITE_TAGLINE}` : `${title} | ${SITE_NAME}`;
 const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المسلسلات'], ...(hasFilms ? [['films', '/films/', 'الأفلام']] : []), ['episodes', '/episodes/', 'الحلقات']];
-const more = [...(LD.tax.genres.length ? [['genres', '/genres/', 'الأنواع']] : []), ...(LD.tax.people.length ? [['people', '/people/', 'الممثلون والمخرجون']] : []), ...(hasUp ? [['ramadan', '/ramadan-2027/', 'رمضان 2027']] : [])];
+const more = [...(TR.series.length + TR.films.length ? [['trending', '/trending/', 'الأكثر مشاهدة']] : []), ...(LD.tax.genres.length ? [['genres', '/genres/', 'الأنواع']] : []), ...(LD.tax.people.length ? [['people', '/people/', 'الممثلون والمخرجون']] : []), ...(hasUp ? [['ramadan', '/ramadan-2027/', 'رمضان 2027']] : [])];
 ---
 <!doctype html>
 <html lang="ar" dir="rtl">

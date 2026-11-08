@@ -175,3 +175,17 @@ export function load() {
   cache = { films, series: all, episodes: episodes.sort(byDate), live, upcoming: all.filter((x) => x.upcoming), tax: buildTax([...live.filter((x) => !x.noindex), ...films]) };
   return cache;
 }
+
+// الأعمال الأكثر بحثًا ومشاهدة اليوم: ملف trending.json يكتبه workflow يومي (ترتيب تقديري من بحث الويب، لا إحصاء رسمي)
+let trendCache;
+export function trending() {
+  if (trendCache) return trendCache;
+  let raw = null;
+  try { raw = JSON.parse(fs.readFileSync(path.join(DIR, 'trending.json'), 'utf8')); } catch { raw = null; }
+  const L = load();
+  const bySeries = new Map(L.live.filter((x) => !x.noindex).map((x) => [Number(x.id), x]));
+  const byFilm = new Map(L.films.map((x) => [Number(x.id), x]));
+  const pick = (arr, by) => (Array.isArray(arr) ? arr : []).map((e) => ({ ...e, work: by.get(Number(e.work_id)) || null })).filter((e) => e.work);
+  trendCache = { date: (raw && raw.date) || '', series: pick(raw && raw.series, bySeries).slice(0, 10), films: pick(raw && raw.films, byFilm).slice(0, 10) };
+  return trendCache;
+}

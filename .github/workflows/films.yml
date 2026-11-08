@@ -1,0 +1,55 @@
+name: egyptian-films
+# أفلام مصرية جديدة (2026) من elcinema: جلب البيانات ثم كتابة مقال أصلي لكل فيلم ونشره في site_items.jsonl
+# 2099773 ولا كان عالبال | 2099520 مطلوب عائليا | 2096928 نصيب | 2098547 محمود التاني | 2095662 ريد فلاج | 2100998 حدوتة
+on:
+  schedule:
+    - cron: "13 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: elcinema film ids (space separated)
+        default: "2099773 2099520 2096928 2098547 2095662 2100998"
+      limit:
+        description: max films this run
+        default: "3"
+
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+
+jobs:
+  films:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      UA: elcinema-licensed-sync (${{ github.repository_owner }})
+      IDS: ${{ inputs.ids || '2099773 2099520 2096928 2098547 2095662 2100998' }}
+      LLM_PROVIDER: deepseek
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Fetch the film pages from elcinema
+        run: python elcinema_scraper.py fetch --ids $IDS --refresh --data-dir elcinema_data --user-agent "$UA"
+      - name: Write and publish original film articles
+        run: >
+          python elcinema_publish.py run --data-dir elcinema_data --no-only-series --only-films
+          --work-ids $IDS --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 3 }}
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"
+      - name: Save data to repo
+        if: always()
+        run: |
+          git config user.name "elcinema-bot"; git config user.email "bot@users.noreply.github.com"
+          python - <<'PY'
+          import glob, sqlite3
+          for p in glob.glob("elcinema_data/*.sqlite"):
+              c = sqlite3.connect(p); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()
+          PY
+          git add -A elcinema_data
+          git diff --cached --quiet || (git commit -m "films: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

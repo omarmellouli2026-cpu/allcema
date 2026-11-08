@@ -1,0 +1,44 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Tile from '../../../components/Tile.astro';
+import Poster from '../../../components/Poster.astro';
+import { load, joinAr, desc, fmtDate, minutes } from '../../../lib/data.js';
+export function getStaticPaths() {
+  return load().films.map((m) => ({ params: { slug: m.slug }, props: { m } }));
+}
+const { m } = Astro.props;
+const f = m.facts, p = m.parsed;
+const others = load().films.filter((x) => x !== m).slice(0, 4);
+const abs = (x) => new URL(x, Astro.site).href;
+const crumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: abs('/') }, { '@type': 'ListItem', position: 2, name: 'الأفلام', item: abs('/films/') },
+  { '@type': 'ListItem', position: 3, name: m.title, item: abs(m.path) }] };
+const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: p.faq.map((x) => ({ '@type': 'Question', name: x.q,
+  acceptedAnswer: { '@type': 'Answer', text: x.a } })) } : null;
+---
+<Base title={m.headline || `فيلم ${m.title}`} description={desc(m.excerpt)} path={m.path} schema={[...(m.schema ? [m.schema] : []), crumbs, ...(faq ? [faq] : [])]} type="article" active="films">
+  <section class="band page-head"><div class="wrap">
+    <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span><a href="/films/">الأفلام</a><span>/</span>{m.title}</nav>
+    <div class="ph-grid">
+      <div>
+        <h1>{m.headline || `فيلم ${m.title}`}</h1>
+        {m.alt && <div class="alt" lang="en">{m.alt}</div>}
+        <ul class="facts">{[f.kind, f.year, joinAr(f.countries), f.genres?.[0]].filter(Boolean).map((x) => <li>{x}</li>)}</ul>
+        <div class="meta-line">{m.at && <time datetime={String(m.at).slice(0, 10)}>{fmtDate(m.at)}</time>}<span>قراءة {minutes(m.mins)}</span></div>
+      </div>
+      <div class="ph-poster"><Poster s={m} /></div>
+    </div>
+  </div></section>
+  <div class="wrap ep-layout">
+    <article class="prose">
+      <div class="lede" set:html={p.lead} />
+      {p.sections.map((x) => <><h2>{x.title}</h2><div set:html={x.html} /></>)}
+      {p.faq.length > 0 && <section class="faq"><h2>أسئلة شائعة</h2>{p.faq.map((x) => <><h3>{x.q}</h3><p>{x.a}</p></>)}</section>}
+      {p.note && <p class="note">{p.note}</p>}
+    </article>
+    <aside>
+      {p.card.length > 0 && <div class="box"><h2>بطاقة الفيلم</h2><dl class="card">{p.card.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}</dl></div>}
+    </aside>
+  </div>
+  {others.length > 0 && <div class="wrap"><section class="section"><div class="sec-head"><h2>أفلام أخرى</h2><a href="/films/">كل الأفلام</a></div><div class="tiles">{others.map((x) => <Tile s={x} />)}</div></section></div>}
+</Base>

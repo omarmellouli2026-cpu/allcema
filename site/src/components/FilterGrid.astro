@@ -1,0 +1,41 @@
+---
+import Tile from './Tile.astro';
+const { works, sorts = [['new', 'الأحدث']], noun = 'عملًا' } = Astro.props;
+const gens = new Map();
+for (const w of works) for (const g of w.facts.genres || []) gens.set(g, (gens.get(g) || 0) + 1);
+const top = [...gens].filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, 10);
+---
+<div data-fgrid data-noun={noun}>
+  {(top.length > 0 || sorts.length > 1) && <div class="fbar">
+    {top.length > 0 && <div class="fchips" role="group" aria-label="تصفية حسب النوع">
+      <button type="button" class="fchip" data-v="" aria-pressed="true">الكل</button>
+      {top.map(([g, c]) => <button type="button" class="fchip" data-v={g} aria-pressed="false">{g} <small>{c}</small></button>)}
+    </div>}
+    {sorts.length > 1 && <select class="fsort" id="fsort" aria-label="الترتيب">{sorts.map(([k, l]) => <option value={k}>{l}</option>)}</select>}
+  </div>}
+  <p class="fcount" id="fcount" aria-live="polite">{works.length} {noun}</p>
+  <div class="tiles" id="fg">{works.map((w, i) => <div class="cell" data-g={(w.facts.genres || []).join('|')} data-t={w.title} data-y={w.facts.year || 0} data-i={i}><Tile s={w} /></div>)}</div>
+</div>
+<script is:inline>
+  (function () {
+    var root = document.querySelector('[data-fgrid]'); if (!root) return;
+    var grid = document.getElementById('fg'), cnt = document.getElementById('fcount'), sel = document.getElementById('fsort');
+    var cells = [].slice.call(grid.children), cur = '';
+    function apply() { var n = 0; cells.forEach(function (c) { var ok = !cur || (c.getAttribute('data-g') || '').split('|').indexOf(cur) > -1; c.hidden = !ok; if (ok) n++; }); cnt.textContent = n + ' ' + root.getAttribute('data-noun'); }
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('.fchip') : null; if (!b) return;
+      cur = b.getAttribute('data-v');
+      [].forEach.call(root.querySelectorAll('.fchip'), function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      apply();
+    });
+    if (sel) sel.addEventListener('change', function () {
+      var k = sel.value;
+      cells.slice().sort(function (a, b) {
+        var ia = +a.getAttribute('data-i'), ib = +b.getAttribute('data-i');
+        if (k === 'az') return a.getAttribute('data-t').localeCompare(b.getAttribute('data-t'), 'ar');
+        if (k === 'year') return (+b.getAttribute('data-y')) - (+a.getAttribute('data-y')) || ia - ib;
+        return ia - ib;
+      }).forEach(function (c) { grid.appendChild(c); });
+    });
+  })();
+</script>

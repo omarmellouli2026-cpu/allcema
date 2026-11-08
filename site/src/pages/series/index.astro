@@ -1,15 +1,18 @@
 ---
 import Base from '../../layouts/Base.astro';
-import Tile from '../../components/Tile.astro';
+import FilterGrid from '../../components/FilterGrid.astro';
 import { load } from '../../lib/data.js';
 const { live: series } = load();
+const abs = (p) => new URL(p, Astro.site).href;
+const schema = series.length ? [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'المسلسلات المصرية', url: abs('/series/'), inLanguage: 'ar',
+  mainEntity: { '@type': 'ItemList', itemListElement: series.slice(0, 100).map((s, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(s.path), name: s.title })) } }] : [];
 ---
-<Base title="المسلسلات" description="المسلسلات التي نكتب ملخصات حلقاتها، مرتبة بحسب آخر حلقة." path="/series/" active="series">
+<Base title="المسلسلات المصرية: ملخصات الحلقات والأبطال" description="المسلسلات المصرية التي نكتب ملخصات حلقاتها: قصة كل مسلسل وأبطاله وفريق عمله وكل حلقة بعد عرضها، مرتبة بحسب آخر حلقة." path="/series/" active="series" schema={schema}>
   <section class="band page-head"><div class="wrap">
     <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>المسلسلات</nav>
-    <h1>المسلسلات</h1>
+    <h1>المسلسلات المصرية</h1>
   </div></section>
   <div class="wrap">
-    {series.length ? <div class="tiles" style="margin-top:34px">{series.map((s) => <Tile s={s} />)}</div> : <p class="empty">لا توجد مسلسلات منشورة بعد.</p>}
+    {series.length ? <FilterGrid works={series} sorts={[['new', 'الأحدث حلقة'], ['az', 'الأبجدي'], ['year', 'سنة الإنتاج']]} noun="مسلسلًا" /> : <p class="empty">لا توجد مسلسلات منشورة بعد.</p>}
   </div>
 </Base>

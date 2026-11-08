@@ -1,7 +1,20 @@
 ---
 import Base from '../layouts/Base.astro';
+import Tile from '../components/Tile.astro';
+import { load } from '../lib/data.js';
+const { live } = load();
 ---
 <Base title="الصفحة غير موجودة" path="/404/" noindex={true}>
-  <section class="band page-head"><div class="wrap"><h1>الصفحة غير موجودة</h1></div></section>
-  <div class="wrap"><div class="plain"><p>قد يكون الرابط قديمًا أو مكتوبًا بخطأ. جرّب <a href="/search/" style="color:var(--sig);font-weight:600">البحث</a> أو ارجع إلى <a href="/" style="color:var(--sig);font-weight:600">الرئيسية</a>.</p></div></div>
+  <section class="band page-head"><div class="wrap">
+    <h1>الصفحة غير موجودة</h1>
+    <p class="lead" style="color:var(--on-ink-mute);margin:10px 0 22px">قد يكون الرابط قديمًا أو مكتوبًا بخطأ. جرّب البحث عن المسلسل أو الفيلم الذي تريده.</p>
+    <form class="hsearch" action="/search/" method="get" role="search">
+      <input type="search" name="q" placeholder="ابحث عن مسلسل أو فيلم أو ممثل" aria-label="ابحث في الموقع" autocomplete="off" />
+      <button type="submit">بحث</button>
+    </form>
+  </div></section>
+  <div class="wrap">
+    {live.length > 0 && <section class="section"><div class="sec-head"><h2>مسلسلات قد تعجبك</h2><a href="/series/">كل المسلسلات</a></div>
+      <div class="tiles">{live.slice(0, 4).map((s) => <Tile s={s} />)}</div></section>}
+  </div>
 </Base>

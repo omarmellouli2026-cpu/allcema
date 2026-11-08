@@ -1,0 +1,22 @@
+---
+const { path, title } = Astro.props;
+const url = new URL(path, Astro.site).href;
+const q = encodeURIComponent(title + ' ' + url);
+---
+<div class="share" data-url={url}><span>شارك</span>
+  <a href={`https://wa.me/?text=${q}`} target="_blank" rel="noopener noreferrer">واتساب</a>
+  <a href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`} target="_blank" rel="noopener noreferrer">تيليجرام</a>
+  <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer">فيسبوك</a>
+  <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer">إكس</a>
+  <button type="button" data-copy>نسخ الرابط</button>
+</div>
+<script is:inline>
+  document.querySelectorAll('.share [data-copy]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var u = b.parentNode.getAttribute('data-url');
+      var done = function () { var t = b.textContent; b.textContent = 'تم النسخ ✓'; setTimeout(function () { b.textContent = t; }, 1800); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, function () { window.prompt('انسخ الرابط', u); });
+      else window.prompt('انسخ الرابط', u);
+    });
+  });
+</script>

@@ -3,13 +3,15 @@ import Base from '../../../layouts/Base.astro';
 import Strip from '../../../components/Strip.astro';
 import EpRow from '../../../components/EpRow.astro';
 import Tile from '../../../components/Tile.astro';
-import { load, desc, fmtDate, minutes } from '../../../lib/data.js';
+import Share from '../../../components/Share.astro';
+import { load, desc, fmtDate, minutes, related } from '../../../lib/data.js';
 export function getStaticPaths() {
   return load().episodes.map((e) => ({ params: { slug: e.series.slug, n: String(e.ep) }, props: { e } }));
 }
 const { e } = Astro.props;
 const s = e.series, p = e.parsed;
-const others = load().live.filter((x) => x !== s).slice(0, 4);
+const rel = related(s, 4);
+const others = rel.length ? rel : load().live.filter((x) => x !== s).slice(0, 4);
 const first = s.episodes[0], last = s.latest;
 const near = s.episodes.filter((x) => x !== e).sort((a, b) => Math.abs(a.ep - e.ep) - Math.abs(b.ep - e.ep) || a.ep - b.ep).slice(0, 3);
 const abs = (x) => new URL(x, Astro.site).href;
@@ -19,7 +21,7 @@ const crumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', it
 const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: p.faq.map((x) => ({ '@type': 'Question', name: x.q,
   acceptedAnswer: { '@type': 'Answer', text: x.a } })) } : null;
 ---
-<Base title={e.title} description={desc(e.excerpt)} path={e.path} schema={[e.schema, crumbs, ...(faq ? [faq] : [])]} type="article" active="series">
+<Base title={e.title} description={desc(e.excerpt)} path={e.path} schema={[e.schema, crumbs, ...(faq ? [faq] : [])]} type="article" active="series" image={s.image} published={e.at} modified={e.at}>
   {e.prev && <link slot="head" rel="prev" href={abs(e.prev.path)} />}
   {e.next && <link slot="head" rel="next" href={abs(e.next.path)} />}
   <section class="band page-head"><div class="wrap">
@@ -32,6 +34,7 @@ const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage
           <time datetime={String(e.at).slice(0, 10)}>{fmtDate(e.at)}</time>
           <span>قراءة {minutes(e.mins)}</span>
         </div>
+        <Share path={e.path} title={e.title} />
       </div>
       <div class="num ph-num" aria-hidden="true">{e.numeral}</div>
     </div>
@@ -61,5 +64,5 @@ const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage
     </aside>
   </div>
   {near.length > 0 && <div class="wrap"><section class="section"><div class="sec-head"><h2>حلقات أخرى من مسلسل {s.title}</h2><a href={s.path}>كل الحلقات</a></div><ul class="ep-list">{near.map((x) => <EpRow e={x} showSeries={false} />)}</ul></section></div>}
-  {others.length > 0 && <div class="wrap"><section class="section"><div class="sec-head"><h2>مسلسلات أخرى</h2><a href="/series/">كل المسلسلات</a></div><div class="tiles">{others.map((x) => <Tile s={x} />)}</div></section></div>}
+  {others.length > 0 && <div class="wrap"><section class="section"><div class="sec-head"><h2>{rel.length ? 'أعمال مشابهة' : 'مسلسلات أخرى'}</h2><a href="/series/">كل المسلسلات</a></div><div class="tiles">{others.map((x) => <Tile s={x} />)}</div></section></div>}
 </Base>

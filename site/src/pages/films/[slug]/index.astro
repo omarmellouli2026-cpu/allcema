@@ -5,6 +5,7 @@ import Poster from '../../../components/Poster.astro';
 import Credits from '../../../components/Credits.astro';
 import Airings from '../../../components/Airings.astro';
 import Related from '../../../components/Related.astro';
+import Share from '../../../components/Share.astro';
 import { load, joinAr, desc, fmtDate, minutes, related } from '../../../lib/data.js';
 export function getStaticPaths() {
   return load().films.map((m) => ({ params: { slug: m.slug }, props: { m } }));
@@ -35,6 +36,7 @@ const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage
         {m.alt && <div class="alt" lang="en">{m.alt}</div>}
         <ul class="facts">{[f.kind, f.year, joinAr(f.countries), f.genres?.[0]].filter(Boolean).map((x) => <li>{x}</li>)}</ul>
         <div class="meta-line">{m.at && <time datetime={String(m.at).slice(0, 10)}>{fmtDate(m.at)}</time>}<span>قراءة {minutes(m.mins)}</span></div>
+        <Share path={m.path} title={m.headline || `فيلم ${m.title}`} />
       </div>
       <div class="ph-poster"><Poster s={m} eager alt={`ملصق فيلم ${m.title}`} />{m.image && <p class="img-cap">ملصق الفيلم، منشور بإذن من الجهة المالكة.</p>}</div>
     </div>

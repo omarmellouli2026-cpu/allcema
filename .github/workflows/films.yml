@@ -1,17 +1,14 @@
 name: egyptian-films
-# أفلام مصرية جديدة (2026) من elcinema: جلب البيانات ثم كتابة مقال أصلي لكل فيلم ونشره في site_items.jsonl
-# 2099773 ولا كان عالبال | 2099520 مطلوب عائليا | 2096928 نصيب | 2098547 محمود التاني | 2095662 ريد فلاج | 2100998 حدوتة
+# أعمال مصرية 2026 مؤكدة على elcinema (السنة=2026 والبلد=مصر) رشّحها Gemini: أفلام + مقال لكل مسلسل
+# كل عمل يُكتب بصياغة أصلية ويمرّ بحواجز الجودة قبل النشر في site_items.jsonl
 on:
   schedule:
-    - cron: "13 */6 * * *"
+    - cron: "13 5 * * *"
   workflow_dispatch:
     inputs:
-      ids:
-        description: elcinema film ids (space separated)
-        default: "2099773 2099520 2096928 2098547 2095662 2100998"
       limit:
-        description: max films this run
-        default: "3"
+        description: max new articles per step this run
+        default: "12"
 
 permissions:
   contents: write
@@ -20,12 +17,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  films:
+  works:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       UA: elcinema-licensed-sync (${{ github.repository_owner }})
-      IDS: ${{ inputs.ids || '2099773 2099520 2096928 2098547 2095662 2100998' }}
+      FILMS: "2099773 2099520 2096928 2098547 2095662 2100998 2069657 2083144 2083562 2093181 2093302 2093383 2094888 2094988 2095133 2095566 2096111 2096547 2096884 2097608 2098609 2098636 2099772 2099774 2099939"
+      SERIES: "2096564 2097096 2097156 2097164 2097293 2097311 2097539 2097858 2097947 2098009 2098016 2098032 2098186 2098485 2098499 2098502 2098528 2098321 2098326 2098497 2098504 2098828 2097584 2097616 2097692 2097753 2096819 2096885 2097068 2097069 2097084 2096187 2096246 2096254 2096453 2096455"
       LLM_PROVIDER: deepseek
       DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
       DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
@@ -34,12 +32,20 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12", cache: pip }
       - run: pip install -r requirements.txt
-      - name: Fetch the film pages from elcinema
-        run: python elcinema_scraper.py fetch --ids $IDS --refresh --data-dir elcinema_data --user-agent "$UA"
+      - name: Fetch film pages from elcinema
+        run: python elcinema_scraper.py fetch --ids $FILMS --refresh --data-dir elcinema_data --user-agent "$UA"
+      - name: Fetch series-level pages from elcinema (no episodes)
+        run: python elcinema_scraper.py fetch --ids $SERIES --no-episodes --data-dir elcinema_data --user-agent "$UA"
       - name: Write and publish original film articles
         run: >
           python elcinema_publish.py run --data-dir elcinema_data --no-only-series --only-films
-          --work-ids $IDS --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 3 }}
+          --work-ids $FILMS --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 12 }}
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"
+      - name: Write and publish original series articles
+        run: >
+          python elcinema_publish.py run --data-dir elcinema_data
+          --work-ids $SERIES --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 12 }}
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"
       - name: Save data to repo
@@ -52,4 +58,4 @@ jobs:
               c = sqlite3.connect(p); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()
           PY
           git add -A elcinema_data
-          git diff --cached --quiet || (git commit -m "films: $(date -u +%F_%H:%M)" && git pull --rebase && git push)
+          git diff --cached --quiet || (git commit -m "works: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

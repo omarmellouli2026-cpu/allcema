@@ -7,6 +7,8 @@ export function allUrls(site) {
     { loc: abs('/episodes/'), lastmod: latest(episodes) }];
   for (const s of series) if (!s.noindex) out.push({ loc: abs(s.path), lastmod: String(s.at), img: s.image ? abs(s.image) : '' });
   for (const e of episodes) if (!e.series.noindex) out.push({ loc: abs(e.path), lastmod: String(e.at) });
+  const epPages = Math.ceil(episodes.filter((e) => !e.series.noindex).length / 20);
+  for (let n = 2; n <= epPages; n++) out.push({ loc: abs(`/episodes/${n}/`), lastmod: latest(episodes) });
   if (films.length) out.push({ loc: abs('/films/'), lastmod: latest(films) });
   for (const m of films) out.push({ loc: abs(m.path), lastmod: String(m.at), img: m.image ? abs(m.image) : '' });
   const lm = latest([...series, ...films]);

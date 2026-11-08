@@ -1,23 +1,62 @@
 ---
 import Base from '../../layouts/Base.astro';
 import EpRow from '../../components/EpRow.astro';
-import { load, num } from '../../lib/data.js';
+import { load, num, fmtDate, joinAr, desc } from '../../lib/data.js';
 export function getStaticPaths({ paginate }) {
-  return paginate(load().episodes, { pageSize: 20 });
+  return paginate(load().episodes.filter((e) => !e.series.noindex), { pageSize: 20 });
 }
 const { page } = Astro.props;
-const title = page.currentPage > 1 ? `آخر الحلقات، صفحة ${num(page.currentPage)}` : 'آخر الحلقات';
+const { live } = load();
+const abs = (p) => new URL(p, Astro.site).href;
+const cur = page.currentPage, last = page.lastPage;
+const href = (n) => (n === 1 ? '/episodes/' : `/episodes/${n}/`);
+const path = href(cur);
+const title = cur > 1 ? `ملخصات حلقات المسلسلات المصرية، صفحة ${num(cur)}` : 'ملخصات حلقات المسلسلات المصرية: أحدث الحلقات';
+const names = [...new Set(page.data.map((e) => e.series.title))].slice(0, 3);
+const withEps = live.filter((s) => s.count > 0);
+const top = page.data[0];
+const description = !top ? 'ملخصات حلقات المسلسلات المصرية على Allcema.' : cur === 1
+  ? `أحدث ملخصات حلقات المسلسلات المصرية على Allcema: ${page.total} ملخصًا لـ ${withEps.length} مسلسلًا، آخرها حلقة ${num(top.ep)} من مسلسل ${top.series.title}.`
+  : `ملخصات حلقات من مسلسلات ${joinAr(names)} وغيرها، الصفحة ${num(cur)} من ${num(last)}.`;
+const days = [];
+for (const e of page.data) {
+  const k = String(e.at).slice(0, 10);
+  let d = days[days.length - 1];
+  if (!d || d.k !== k) { d = { k, label: fmtDate(e.at), list: [] }; days.push(d); }
+  d.list.push(e);
+}
+const nums = [];
+for (let n = 1; n <= last; n++) if (n === 1 || n === last || Math.abs(n - cur) <= 2) nums.push(n);
+const schema = [
+  { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, url: abs(path), inLanguage: 'ar', description,
+    mainEntity: { '@type': 'ItemList', itemListElement: page.data.map((e, i) => ({ '@type': 'ListItem', position: (cur - 1) * 20 + i + 1, url: abs(e.path), name: e.title })) } },
+  { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: abs('/') }, { '@type': 'ListItem', position: 2, name: 'الحلقات', item: abs('/episodes/') },
+    ...(cur > 1 ? [{ '@type': 'ListItem', position: 3, name: `صفحة ${num(cur)}`, item: abs(path) }] : [])] },
+];
 ---
-<Base title={title} description="أحدث ملخصات الحلقات من كل المسلسلات التي نتابعها." path={page.currentPage > 1 ? `/episodes/${page.currentPage}/` : '/episodes/'} active="episodes">
+<Base title={title} description={description} path={path} schema={schema} active="episodes" image={top && top.series.image ? top.series.image : ''}>
+  {page.url.prev && <link slot="head" rel="prev" href={abs(page.url.prev)} />}
+  {page.url.next && <link slot="head" rel="next" href={abs(page.url.next)} />}
   <section class="band page-head"><div class="wrap">
-    <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>الحلقات</nav>
-    <h1>آخر الحلقات</h1>
+    <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>{cur > 1 ? <><a href="/episodes/">الحلقات</a><span>/</span>صفحة {num(cur)}</> : 'الحلقات'}</nav>
+    <h1>{cur > 1 ? `ملخصات الحلقات، صفحة ${num(cur)}` : 'ملخصات حلقات المسلسلات المصرية'}</h1>
+    {cur === 1 && <p class="lead" style="color:var(--on-ink-mute);margin:12px 0 0;max-width:42em">أحدث ملخصات الحلقات من المسلسلات التي نتابعها، من الأحدث إلى الأقدم. كل ملخص يبدأ بتنبيه حرق ويشرح ما جرى في الحلقة بصياغتنا، ويمكنك الانتقال إلى صفحة المسلسل لقراءة حلقاته بالترتيب.</p>}
+    {cur === 1 && <div class="kpis kpis-inline"><div><b>{page.total}</b><span>ملخص حلقة</span></div><div><b>{withEps.length}</b><span>مسلسلًا</span></div></div>}
   </div></section>
-  <div class="wrap" style="padding-top:12px">
-    {page.data.length ? <ul class="ep-list">{page.data.map((e) => <EpRow e={e} />)}</ul> : <p class="empty">لا توجد حلقات منشورة بعد.</p>}
-    {(page.url.prev || page.url.next) && <div class="pager">
-      {page.url.prev ? <a href={page.url.prev}>الصفحة السابقة</a> : <span />}
-      {page.url.next ? <a href={page.url.next}>الصفحة التالية</a> : <span />}
-    </div>}
+  <div class="wrap">
+    {cur === 1 && withEps.length > 0 && <section class="section" style="margin-top:34px">
+      <div class="sec-head"><h2>تصفّح حسب المسلسل</h2><a href="/series/">كل المسلسلات</a></div>
+      <div class="chips">{withEps.map((s) => <a class="chip" href={s.path}>{s.title}<small>{s.count}</small></a>)}</div>
+    </section>}
+    {days.length ? days.map((d) => <section class="section" style="margin-top:30px">
+      <div class="sec-head"><h2>{d.label}</h2><span class="mute">{d.list.length} {d.list.length === 1 ? 'حلقة' : 'حلقات'}</span></div>
+      <ul class="ep-list">{d.list.map((e) => <EpRow e={e} />)}</ul>
+    </section>) : <p class="empty">لا توجد حلقات منشورة بعد.</p>}
+    {last > 1 && <nav class="pager2" aria-label="صفحات الحلقات">
+      {page.url.prev ? <a href={page.url.prev} rel="prev">السابقة</a> : <span class="off">السابقة</span>}
+      {nums.map((n, i) => <>{i > 0 && nums[i - 1] !== n - 1 && <span class="gap">…</span>}{n === cur ? <span class="cur" aria-current="page">{num(n)}</span> : <a href={href(n)}>{num(n)}</a>}</>)}
+      {page.url.next ? <a href={page.url.next} rel="next">التالية</a> : <span class="off">التالية</span>}
+    </nav>}
   </div>
 </Base>

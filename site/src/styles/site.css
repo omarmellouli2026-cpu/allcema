@@ -322,3 +322,15 @@ dl.card dd a:hover{border-color:var(--sig)}
 .share>span{font:700 .82rem/1 var(--display);color:var(--on-ink-mute);margin-inline-end:4px}
 .share a,.share button{display:inline-flex;align-items:center;border:1px solid #ffffff33;background:#ffffff12;color:var(--on-ink);border-radius:99px;padding:8px 14px;font:600 .82rem/1 var(--display);cursor:pointer;transition:border-color .15s,background .15s}
 .share a:hover,.share button:hover{border-color:var(--sig);background:#ffffff24}
+
+/* ===== ترقيم صفحات الحلقات ===== */
+.pager2{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;padding:34px 0 10px;font:700 .95rem/1 var(--display)}
+.pager2 a,.pager2 .cur,.pager2 .off{min-width:40px;padding:11px 14px;text-align:center;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.pager2 a:hover{border-color:var(--sig);color:var(--sig)}
+.pager2 .cur{background:var(--sig);border-color:var(--sig);color:var(--sig-ink)}
+.pager2 .off{opacity:.4}
+.pager2 .gap{color:var(--mute)}
+.kpis-inline{margin-top:22px;max-width:360px;grid-auto-flow:column;background:#ffffff10;border-color:#ffffff22;box-shadow:none}
+.kpis-inline div{border-color:#ffffff22}
+.kpis-inline b{color:var(--on-ink)}
+.kpis-inline span{color:var(--on-ink-mute)}

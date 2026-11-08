@@ -105,7 +105,7 @@ export function load() {
       hue: [...title].reduce((a, c) => a + c.charCodeAt(0), 0) % 360,
       image: fs.existsSync(path.resolve('media', `${wid}.b64`)) ? `/media/${wid}.jpg` : PACK[idStr(wid)] ? `/media/${idStr(wid)}.jpg` : '',
       art: !fs.existsSync(path.resolve('media', `${wid}.b64`)) && !!PACK[idStr(wid)],
-      item, excerpt: (item && item.excerpt) || blurb(f, up), blurb: blurb(f, up), episodes: [],
+      item, article: item && item.html && !up ? parseArticle(item.html) : null, excerpt: (item && item.excerpt) || blurb(f, up), blurb: blurb(f, up), episodes: [],
     };
     s.episodes = eps0.map((o) => {
       const ep = o.facts.episode_no;

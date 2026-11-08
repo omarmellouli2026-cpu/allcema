@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -100,12 +101,23 @@ def run(args, search=D.search_json) -> dict:
             f"(أعمال {y - 1} و{y} و{y + 1} وما يُعرض حاليًا). أعد حتى {args.top} مسلسلًا وحتى {args.top} فيلمًا.")
     queries = ["أكثر المسلسلات المصرية مشاهدة هذا الأسبوع", "أكثر الأفلام المصرية مشاهدة هذا الأسبوع", "ترند مسلسلات مصرية الآن"]
     st = {"series": 0, "films": 0, "matched": 0, "new_series": [], "new_films": [], "unmatched": []}
+    obj = None
     try:
         obj, doms = search(SYS, user, queries, requests)
-    except (SystemExit, Exception) as e:  # لا نكسر الدورة؛ يبقى الترتيب السابق
-        print(f"توقف الترتيب اليومي: {e}")
+    except (SystemExit, Exception) as e:  # Gemini أولًا؛ عند فشله (مثل حد الحصة 429) نجرّب DeepSeek إن توفّر مفتاحه
+        print(f"تعذّر البحث بالمزوّد الأول: {str(e)[:160]}")
         st["stopped"] = str(e)[:200]
-        return st
+        if os.environ.get("DEEPSEEK_API_KEY") and (os.environ.get("LLM_PROVIDER") or "").strip().lower() != "deepseek":
+            os.environ["LLM_PROVIDER"] = "deepseek"
+            try:
+                obj, doms = search(SYS, user, queries, requests)
+                st.pop("stopped", None)
+                st["provider"] = "deepseek"
+            except (SystemExit, Exception) as e2:
+                print(f"تعذّر DeepSeek أيضًا: {str(e2)[:160]}")
+                st["stopped"] = (st["stopped"] + " | " + str(e2))[:300]
+        if obj is None:
+            return st                                   # لا نكسر الدورة؛ يبقى الترتيب السابق
     done = published_ids(db)
     result = {"date": now().date().isoformat(), "generated_at": now().isoformat(timespec="seconds"),
               "note": "ترتيب تقديري من نتائج البحث على الويب وليس إحصاء رسميًا للمشاهدات.", "series": [], "films": []}

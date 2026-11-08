@@ -1,0 +1,31 @@
+name: seo-batch10
+# يُنفَّذ مرة واحدة: روابط داخلية في بطاقة العمل بصفحة الحلقة
+on:
+  push:
+    paths:
+      - ".github/workflows/seo-batch10.yml"
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PAYLOAD: "H4sIAFPd8GoC/7VV3W7bNhS+11OccWgttorUDkVRyD9DtqRYsCwJ0t7ZwiBLtK1algiStjt4vsiQZkWwtyiGtMHWrcCKoW8ivc0OKctu0QTbLmrYPuTh+fnODw8/h61bWxDlcZINfZiqwdYDzbEe7u3vPoI2LJZN+O5wRy+7QRO2j452D3ZWm6/2DoyEtXuElEgReTwcMulJJhIkXZlOh4HHeCLzmG11s8ANpRI5sYzF22jFAnv3yAGSTHguFCwgzcPYgZjJyIHBRO2EijkwSbKpYtIBwVJkxLCEgcgn0HBdr/qmSd+LQxW6T2SjSRwLzOd/mnUgTbLxfiLVvzmgTg08yjMUlxg/c6uwHeBmx0MhWdzsZRs4/0W4lvU8KN6Uz4uL4mXxNxR/4OJ1eVqeF6+gPCnPQbOLi/In3CM5Ld6Vz8pTv1q/KM+M5jvQBBkv8YcWyrOa8aL4q3iNEm8rhT/Lc312Wv5cPoPibXlS/I6Hl+/BqaB/u2eKv4CGUbtE0TNUPWn40Bg2HGQbT5XRX8szlLgoftOnkTk1bHT8pmbzNfsSUZ/WtjZsjLJ8jvRVxYZl8yNQUSji43yu08pdvXEnIbft7tiBWUCh3TGwu+MAvgTNrItsr9gOPFIC29+eUVfyNFG21y1+cYJeT97yKHVAiSkLwDfKM+yfMJUsoBrIpg8WK9cpy4ZqBB24AzdvQitOZhCloZTtHunnT3uk0xp90bmydi0PT1pxupbX9lBhcU1Q2jbKq85ivGx5SFtx3FnM9Dru4B+eUr1JV5vlpg8Xdco+Bdy17Q1gB0bXYF6MsCgIHCRT/khN0jZGAF4Hs/1+OMsr48HsB5a1uuM53iX5A/71Q8nu37OODw8fY0fk0mXZLBF55g6ZsolmE6yXTBQj1IrZAERsc+rjEFBTkUHOWWajFg/VyH2SJ5mtVfCeYiOwrBqUbWIGJaGuYGFsV2bmwuYIgfomywNeOf/YTFOzJ+GYxYmQa0+4ycIJswfGz1Nsz+/zcfsxdp5W0JgGaJ3MyVUo5gKjsSW1ojAasWomD3IBqJGnONYyNockM3O8QqfvipE1SeEUUNikwZwmA5BulE8zZaM6hc/acNdf9Q4Ax7uCidw++Pqbw2N4uL23D/aNmPoEbnyg5mj35EdiMHT9B3cCzBZPw4jZRA9FID19gzA8LJuLISv7buXfIOvyAEHKtU4dCK0jkzqkKgiMfiJtrGFdgw9kzFN2vcwkFGMmVrLV+1YFG00FIjBp0SmpK2WKI69uEQoMZwMQUuexMg5Zrgzaqaj949IV+Bgm3GSDwm3QFMkGWV/r4CO7xv5JO6u/bqTqBrn9+/dihq2GDEqtVdnRZDSCkOOcZDGh1j9yzyRUQAgAAA=="
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Apply patch
+        run: echo "$PAYLOAD" | base64 -d | gunzip > /tmp/patch.py && python3 /tmp/patch.py
+      - name: Verify build
+        working-directory: site
+        run: npm install && npm run build
+      - name: Commit
+        run: |
+          git config user.name "allcema-bot"; git config user.email "bot@users.noreply.github.com"
+          git add -A site
+          git diff --cached --quiet || (git commit -m "site: internal links in episode work card" && git pull --rebase && git push)

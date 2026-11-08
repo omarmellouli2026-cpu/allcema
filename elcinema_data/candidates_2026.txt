@@ -1,0 +1,137 @@
+works total: 1313
+queue by state: [('done', 1313), ('missing', 111), ('pending', 343), ('skipped', 444)]
+site_items by state: [('held', 2), ('published', 60)]
+works year>=2026: 1310
+  egypt: 186 | series 125 | films 61
+  countries empty: 0
+  egypt published: 60 | held: 2 | no site_item: 124 | other: 0
+
+== egypt 2026 NOT published ==
+2093113 | S | 2026 | روج أسود | eps=30 | status=تم عرضه | si=None
+2093970 | S | 2026 | للعدالة وجه آخر | eps=15 | status=تم عرضه | si=None
+2093989 | S | 2026 | اللعبة ج5 : الكلاسيكو | eps=30 | status=تم عرضه | si=None
+2094747 | S | 2026 | خمسين خمسين | eps=15 | status=تم عرضه | si=None
+2096346 | S | 2026 | كلهم بيحبوا مودي | eps=15 | status=تم عرضه | si=None
+2096531 | S | 2026 | كان ياما كان | eps=15 | status=تم عرضه | si=None
+2096582 | S | 2026 | المداح ج6: أسطورة النهاية | eps=30 | status=تم عرضه | si=None
+2096591 | S | 2026 | عين سحرية | eps=15 | status=تم عرضه | si=None
+2096818 | S | 2026 | عرض وطلب | eps=15 | status=تم عرضه | si=None
+2097094 | S | 2026 | توابع | eps=15 | status=تم عرضه | si=None
+2097096 | S | 2026 | إفراج | eps=30 | status=تم عرضه | si=None
+2097153 | S | 2026 | صحاب الأرض | eps=15 | status=تم عرضه | si=None
+2097314 | S | 2026 | قطر صغنطوط | eps=15 | status=تم عرضه | si=None
+2097372 | S | 2026 | اللون الأزرق | eps=15 | status=تم عرضه | si=None
+2097471 | S | 2026 | أب ولكن | eps=15 | status=تم عرضه | si=None
+2097648 | S | 2026 | القصة الكاملة | eps=None | status=تم عرضه | si=held
+2097753 | S | 2026 | حد أقصى | eps=15 | status=تم عرضه | si=held
+2098035 | S | 2026 | عنبر الموت | eps=None | status=لم يعرض بعد | si=None
+2098197 | S | 2026 | البخت | eps=30 | status=ﺗﻢ ﻋﺮﺿﻪ | si=None
+2098225 | S | 2026 | المتر سمير | eps=15 | status=تم عرضه | si=None
+2098545 | S | 2026 | اسأل روحك | eps=30 | status=تم عرضه | si=None
+2098568 | S | 2026 | المتر براءة | eps=None | status=إذاعي | si=None
+2098632 | S | 2026 | إس بتعس | eps=None | status=اﺫاﻋﻲ | si=None
+2098638 | S | 2026 | صايم ولا نايم | eps=None | status=اﺫاﻋﻲ | si=None
+2098665 | S | 2026 | هبد في هبد | eps=None | status=إذاعي | si=None
+2098666 | S | 2026 | رمضان أون لاين | eps=None | status=اﺫاﻋﻲ | si=None
+2098712 | S | 2026 | إثبات نسب | eps=15 | status=تم عرضه | si=None
+2098720 | S | 2026 | مرفوع مؤقتا من الخدمة | eps=None | status=إﺫاﻋﻲ | si=None
+2098760 | S | 2026 | الإسكندر الأصغر | eps=None | status=إذاعي | si=None
+2098767 | S | 2026 | فوازير شبيك لبيك | eps=None | status=اﺫاﻋﻲ | si=None
+2098773 | S | 2026 | أنس AI | eps=30 | status=رسوم متحركة | si=None
+2098777 | S | 2026 | أوضتين وصالة | eps=None | status=اﺫاﻋﻲ | si=None
+2098815 | S | 2026 | لايك وشير | eps=None | status=اﺫاﻋﻲ | si=None
+2098816 | S | 2026 | مملكة النور | eps=None | status=اﺫاﻋﻲ | si=None
+2098817 | S | 2026 | الحكاية فيها إن | eps=None | status=اﺫاﻋﻲ | si=None
+2098862 | S | 2026 | وصية جدو | eps=None | status=تم عرضه | si=None
+2098880 | S | 2026 | بيت الحلمية | eps=None | status=اﺫاﻋﻲ | si=None
+2098896 | S | 2026 | بهجة رمضان | eps=None | status=اﺫاﻋﻲ | si=None
+2098897 | S | 2026 | سيدة المكارم | eps=None | status=اﺫاﻋﻲ | si=None
+2098898 | S | 2026 | سلطان العلماء | eps=None | status=إذاعي | si=None
+2098918 | S | 2026 | أعمال شوقي الأصلية | eps=None | status=9 دقائق | si=None
+2098919 | S | 2026 | كابتن شديد | eps=30 | status=ﺭﺳﻮﻡ ﻣﺘﺤﺮﻛﺔ | si=None
+2098924 | S | 2026 | جدو والعيلة | eps=None | status=اﺫاﻋﻲ | si=None
+2098930 | S | 2026 | صعيدي ومطرب وحرامي | eps=None | status=ﺗﻢ ﻋﺮﺿﻪ | si=None
+2099055 | S | 2026 | رحال | eps=None | status=ﺭﺳﻮﻡ ﻣﺘﺤﺮﻛﺔ | si=None
+2099057 | S | 2026 | نور وصندوق الأسرار | eps=30 | status=رسوم متحركة | si=None
+2099224 | S | 2026 | جناح 13 | eps=None | status=ﻗﺼﻴﺮ | si=None
+2099388 | S | 2026 | قلب مفتوح | eps=66 | status=قصير | si=None
+2099389 | S | 2026 | ابن الشركة | eps=60 | status=قصير | si=None
+2100300 | S | 2026 | طالع نازل | eps=None | status=تم عرضه | si=None
+2100355 | S | 2026 | ولاد عامر | eps=22 | status=تم عرضه | si=None
+2100684 | S | 2026 | نوادر وجحا | eps=None | status=إذاعي | si=None
+2101002 | S | 2027 | عيلة تعمل عمايل | eps=None | status=لم يعرض بعد | si=None
+2101566 | S | 2027 | 180 | eps=None | status=جاري إنتاجه | si=None
+2101600 | S | 2027 | المداح ج7: أسطورة السبعة | eps=None | status=جاري إنتاجه | si=None
+2101729 | S | 2027 | عشماوي | eps=None | status=جاري إنتاجه | si=None
+2101759 | S | 2027 | سلطان الديب | eps=None | status=جاري إنتاجه | si=None
+2101761 | S | 2027 | بين الشك واليقين | eps=None | status=جاري إنتاجه | si=None
+2101777 | S | 2027 | القناع | eps=None | status=جاري إنتاجه | si=None
+2101815 | S | 2027 | 17 متر | eps=None | status=جاري إنتاجه | si=None
+2101817 | S | 2027 | رحلة طاهر المصري | eps=None | status=جاري إنتاجه | si=None
+2101893 | S | 2027 | حليمة جبران | eps=None | status=جاري إنتاجه | si=None
+2101913 | S | 2027 | ونس | eps=None | status=جاري إنتاجه | si=None
+2101914 | S | 2027 | خيوط من ذهب | eps=None | status=جاري إنتاجه | si=None
+2101915 | S | 2027 | روح وجسد | eps=None | status=جاري إنتاجه | si=None
+2101916 | S | 2027 | نجم الموسم | eps=None | status=جاري إنتاجه | si=None
+2101917 | S | 2027 | من حبي فيك | eps=None | status=جاري إنتاجه | si=None
+2101933 | S | 2026 | ولاد اللذينة | eps=None | status=لم يعرض بعد | si=None
+2101970 | S | 2027 | قاصد طريق | eps=None | status=جاري إنتاجه | si=None
+2101971 | S | 2027 | الفلكي | eps=None | status=جاري إنتاجه | si=None
+2101972 | S | 2027 | بدلة وفستان | eps=None | status=جاري إنتاجه | si=None
+2102041 | S | 2027 | كتف في كتف | eps=None | status=جاري إنتاجه | si=None
+2102050 | S | 2026 | ضلع ثالث | eps=None | status=تم عرضه | si=None
+2102052 | S | 2027 | نيللي وشريهان تاني | eps=None | status=لم يعرض بعد | si=None
+2102071 | S | 2027 | الظل | eps=None | status=جاري إنتاجه | si=None
+2102072 | S | 2027 | عامل ميت | eps=None | status=جاري إنتاجه | si=None
+2102193 | S | 2027 | جراب الحاوي | eps=1 | status=جاري إنتاجه | si=None
+2102416 | S | 2026 | نور | eps=30 | status=2 دقيقتين | si=None
+2102434 | S | 2027 | تمكين | eps=None | status=جاري إنتاجه | si=None
+2102463 | S | 2027 | مصلحة الجوازات | eps=None | status=جاري إنتاجه | si=None
+2102679 | S | 2027 | ميس هناء | eps=None | status=جاري إنتاجه | si=None
+2102695 | S | 2027 | النداهة | eps=None | status=لم يعرض بعد | si=None
+2102712 | S | 2027 | Matchmaker | eps=None | status=جاري إنتاجه | si=None
+2102716 | S | 2027 | الخال والد | eps=None | status=جاري إنتاجه | si=None
+2102746 | S | 2027 | فرصة سعيدة | eps=None | status=لم يعرض بعد | si=None
+2102829 | S | 2027 | التوهة | eps=None | status=جاري إنتاجه | si=None
+2102831 | S | 2027 | أبو الدهب | eps=None | status=جاري إنتاجه | si=None
+2102832 | S | 2027 | بنت امبارح | eps=None | status=جاري إنتاجه | si=None
+2102833 | S | 2027 | بأي ثمن | eps=None | status=جاري إنتاجه | si=None
+2102840 | S | 2026 | ٢ قهوة | eps=None | status=تمثيلية | si=None
+2092144 | F | 2026 | Seven Dogs (7 Dogs / سفن دوجز) | eps=None | status=تم عرضه | si=None
+2096813 | F | 2026 | تاجر السعادة | eps=None | status=ﺗﻢ ﻋﺮﺿﻪ | si=None
+2097239 | F | 2026 | تحت الطلب | eps=None | status=ﻟﻢ ﻳﻌﺮﺽ ﺑﻌﺪ | si=None
+2097884 | F | 2026 | فاميلي بيزنس | eps=None | status=تم عرضه | si=None
+2098247 | F | 2026 | ده صوت إيه ده! | eps=None | status=تم عرضه | si=None
+2098422 | F | 2026 | رامز ليفل الوحش | eps=None | status=تم عرضه | si=None
+2098542 | F | 2027 | علشان خاطر جليلة | eps=None | status=لم يعرض بعد | si=None
+2098610 | F | 2026 | طه الغريب | eps=None | status=ﺟﺎﺭﻱ ﺇﻧﺘﺎﺟﻪ | si=None
+2098835 | F | 2026 | ألف ليلة مع فيفي عبده | eps=None | status=ﺑﺮﻧﺎﻣﺞ ترفيهي | si=None
+2098891 | F | 2026 | الكاميرا الخفية | eps=None | status=برنامج ترفيهي | si=None
+2099123 | F | 2026 | Kemet: Year One (Kemet) | eps=None | status=ﺗﻢ ﻋﺮﺿﻪ | si=None
+2099304 | F | 2026 | أحلام دندرة | eps=None | status=ﻗﺼﻴﺮ | si=None
+2099323 | F | 2026 | أداجيو (اللحن الأخير) | eps=None | status=ﺗﻢ ﻋﺮﺿﻪ | si=None
+2099523 | F | 2026 | الفيل على الدرفيل | eps=None | status=جاري إنتاجه | si=None
+2099612 | F | 2026 | أضعف خلقه | eps=None | status=لم يعرض بعد | si=None
+2099771 | F | 2027 | الورشة | eps=None | status=ﻟﻢ ﻳﻌﺮﺽ ﺑﻌﺪ | si=None
+2099785 | F | 2026 | لعب ولعب | eps=None | status=ﺗﻢ ﻋﺮﺿﻪ | si=None
+2100215 | F | 2026 | التياترو | eps=None | status=تم عرضه | si=None
+2100326 | F | 2026 | ليلة عسل | eps=None | status=تم عرضه | si=None
+2100336 | F | 2026 | تضحيات صنعت مجد | eps=None | status=قصير | si=None
+2100641 | F | 2026 | خيال مريض | eps=None | status=تم عرضه | si=None
+2100677 | F | 2026 | ممسوس | eps=None | status=لم يعرض بعد | si=None
+2100816 | F | 2026 | الساحل الشرير | eps=None | status=تم عرضه | si=None
+2100835 | F | 2026 | ليلة باظت خالص | eps=None | status=لم يعرض بعد | si=None
+2100997 | F | 2027 | حتة مني | eps=None | status=جاري إنتاجه | si=None
+2101188 | F | 2026 | بوكس العيلة | eps=None | status=تم عرضه | si=None
+2101407 | F | 2026 | السلايف | eps=None | status=لم يعرض بعد | si=None
+2101989 | F | 2026 | كريبتو | eps=None | status=لم يعرض بعد | si=None
+2102017 | F | 2026 | تروما | eps=None | status=تم عرضه | si=None
+2102137 | F | 2027 | ميعاد عشا | eps=None | status=جاري إنتاجه | si=None
+2102187 | F | 2027 | الفيل الأزرق 3 | eps=None | status=لم يعرض بعد | si=None
+2102481 | F | 2026 | من ماسبيرو | eps=None | status=برنامج توك شو | si=None
+2102483 | F | 2026 | باب مريم | eps=None | status=لم يعرض بعد | si=None
+2102697 | F | 2027 | أهل العيب | eps=None | status=لم يعرض بعد | si=None
+2102700 | F | 2026 | في ظلال القاهرة | eps=None | status=لم يعرض بعد | si=None
+2102842 | F | 2027 | ربنا يتمم بخير | eps=None | status=قصير | si=None
+
+== 2026+ without country data (first 40) ==

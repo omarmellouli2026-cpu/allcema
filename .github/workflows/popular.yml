@@ -1,6 +1,6 @@
 name: popular-series
 # مسلسلات مصرية الأكثر بحثًا ومشاهدة (ترشيح Gemini، وتحقّقنا من وجودها على elcinema):
-# كل المسلسلات المصرية الجارية في القائمة (الحلقات تُلخَّص فور عرضها بحد أقصى 24 يوميًا)
+# كل المسلسلات المصرية الجارية في القائمة (الحلقات تُلخَّص فور عرضها بحد أقصى 48 يوميًا)
 # 2096455 علي كلاي | 2096453 اتنين غيرنا | 2096591 عين سحرية | 2097153 صحاب الأرض | 2098035 عنبر الموت (يُعرض 26 نوفمبر 2026)
 on:
   schedule:
@@ -12,7 +12,7 @@ on:
         default: "2096564 2097096 2097156 2097164 2097293 2097311 2097539 2097858 2097947 2098009 2098016 2098032 2098186 2098485 2098499 2098502 2098528 2098321 2098326 2098497 2098504 2098828 2097584 2097616 2097692 2097753 2096819 2096885 2097068 2097069 2097084 2096187 2096246 2096254 2096453 2096455 2096591 2097153 2098035"
       limit:
         description: max episodes this run
-        default: "3"
+        default: "6"
 
 permissions:
   contents: write
@@ -40,7 +40,7 @@ jobs:
       - name: Research and publish new episode recaps
         run: >
           python elcinema_recaps.py --data-dir elcinema_data --work-ids $IDS --expect-episodes
-          --retry-held-hours 5 --limit ${{ inputs.limit || 3 }} --daily-cap 24 --target jsonl
+          --retry-held-hours 5 --limit ${{ inputs.limit || 6 }} --daily-cap 48 --target jsonl
           --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"
       - name: Save data to repo

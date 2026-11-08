@@ -3,7 +3,7 @@ import Poster from './Poster.astro';
 const { s } = Astro.props;
 const f = s.facts;
 ---
-<a class="tile" href={s.path} aria-label={`مسلسل ${s.title}`}>
+<a class="tile" href={s.path} aria-label={`${s.isFilm ? 'فيلم' : 'مسلسل'} ${s.title}`}>
   <Poster s={s} />
   <div class="tile-body"><h3>{s.title}</h3><p>{(f.cast || []).slice(0, 2).join('، ')}</p></div>
 </a>

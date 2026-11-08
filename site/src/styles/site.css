@@ -261,3 +261,15 @@ aside .box,.pn a,.pager a{border-radius:var(--r)}
   .stats b{font-size:1.5rem}
   .site-foot{padding:40px 0 26px}
 }
+
+/* الأشخاص والأنواع وأين يُعرض */
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:7px 16px;font:600 .95rem/1.5 var(--display);transition:border-color .15s,color .15s}
+.chip:hover{border-color:var(--sig);color:var(--sig)}
+.chip small{font:700 .75rem/1 var(--display);background:var(--paper);color:var(--mute);border-radius:99px;padding:4px 8px}
+dl.card dd a{color:var(--sig);border-bottom:1px solid transparent}
+dl.card dd a:hover{border-color:var(--sig)}
+.air{padding:9px 0;border-top:1px solid var(--line)}
+.air:first-of-type{border-top:0}
+.air b{display:block;font:700 .95rem var(--display)}
+.air ul{margin:4px 0 0;padding:0;list-style:none;font-size:.9rem;line-height:1.9;color:var(--mute)}

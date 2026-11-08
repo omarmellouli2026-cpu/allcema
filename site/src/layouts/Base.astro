@@ -49,7 +49,7 @@ const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المس
   <footer class="site-foot"><div class="wrap">
     <div class="foot-grid">
       <div><b>{SITE_NAME}</b>{SITE_TAGLINE}. نكتب كل ملخص بصياغتنا، ونعتمد فيه على مصادر منشورة، ونضع تنبيه الحرق في أوله.</div>
-      <nav aria-label="روابط التذييل"><b>الموقع</b><a href="/series/">المسلسلات</a>{hasFilms && <a href="/films/">الأفلام</a>}{hasUp && <a href="/ramadan-2027/">رمضان 2027</a>}<a href="/episodes/">الحلقات</a><a href="/about/">من نحن</a><a href="/privacy/">الخصوصية</a><a href="/contact/">اتصل بنا</a><a href="/rss.xml">RSS</a></nav>
+      <nav aria-label="روابط التذييل"><b>الموقع</b><a href="/series/">المسلسلات</a>{hasFilms && <a href="/films/">الأفلام</a>}{LD.tax.people.length > 0 && <a href="/people/">الممثلون والمخرجون</a>}{LD.tax.genres.length > 0 && <a href="/genres/">الأنواع</a>}{hasUp && <a href="/ramadan-2027/">رمضان 2027</a>}<a href="/episodes/">الحلقات</a><a href="/about/">من نحن</a><a href="/privacy/">الخصوصية</a><a href="/contact/">اتصل بنا</a><a href="/rss.xml">RSS</a></nav>
       {footSeries.length > 0 && <nav aria-label="المسلسلات"><b>المسلسلات</b>{footSeries.map((x) => <a href={x.path}>{x.title}</a>)}</nav>}
     </div>
     <small>{DISCLOSURE && <>{DISCLOSURE} </>}© {new Date().getFullYear()} {SITE_NAME}</small>

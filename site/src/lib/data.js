@@ -32,6 +32,78 @@ export const joinAr = (a) => {
   return l.slice(0, -1).join('، ') + ' و' + l[l.length - 1];
 };
 export const num = (n) => String(Number(n));
+// تطبيع الأسماء: يوحّد أشكال العرض (ﻛﻮﻣﻴﺪﻱ → كوميدي) ويزيل التشكيل والمسافات الزائدة
+const norm = (s) => String(s || '').normalize('NFKC').replace(DIAC, '').replace(/\s+/g, ' ').trim();
+const escH = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+export const roleText = (e) => { const a = []; if (e.roles.has('dir')) a.push('مخرج'); if (e.roles.has('writer')) a.push('مؤلف'); if (e.roles.has('cast')) a.push('ممثل'); return joinAr(a) || 'من صنّاع الأعمال'; };
+function buildTax(works) {
+  const people = new Map(), genres = new Map(), countries = new Map(), used = new Set();
+  const add = (m, name, w, role) => {
+    const k = norm(name); if (!k) return;
+    let e = m.get(k);
+    if (!e) { let slug = slugify(k); while (used.has(m === people ? 'p' + slug : m === genres ? 'g' + slug : 'c' + slug)) slug += '-2'; used.add((m === people ? 'p' : m === genres ? 'g' : 'c') + slug);
+      e = { name: k, slug, works: new Map(), roles: new Set() }; m.set(k, e); }
+    if (!e.works.has(w)) e.works.set(w, new Set());
+    if (role) { e.works.get(w).add(role); e.roles.add(role); }
+  };
+  for (const w of works) { const f = w.facts;
+    (f.directors || []).forEach((n) => add(people, n, w, 'dir')); (f.writers || []).forEach((n) => add(people, n, w, 'writer')); (f.cast || []).forEach((n) => add(people, n, w, 'cast'));
+    (f.genres || []).forEach((n) => add(genres, n, w)); (f.countries || []).forEach((n) => add(countries, n, w)); }
+  const fin = (m, min) => [...m.values()].filter((e) => e.works.size >= min).map((e) => ({ ...e, list: [...e.works.keys()], count: e.works.size }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ar'));
+  const P = fin(people, 2), G = fin(genres, 2), C = fin(countries, 1);
+  return { people: P, genres: G, countries: C, personBy: new Map(P.map((e) => [e.name, e])), genreBy: new Map(G.map((e) => [e.name, e])), countryBy: new Map(C.map((e) => [e.name, e])) };
+}
+// يحوّل قائمة أسماء إلى روابط HTML لصفحات الأشخاص/الأنواع/الدول عند وجودها
+export function linkList(kind, names) {
+  const t = load().tax, by = kind === 'p' ? t.personBy : kind === 'g' ? t.genreBy : t.countryBy, base = kind === 'p' ? '/people/' : kind === 'g' ? '/genres/' : '/countries/';
+  return [...new Set((names || []).map(norm).filter(Boolean))].map((n) => (by.has(n) ? `<a href="${base}${by.get(n).slug}/">${escH(n)}</a>` : escH(n))).join('، ');
+}
+export const minutes = (n) => (n === 1 ? 'دقيقة واحدة' : n === 2 ? 'دقيقتان' : n <= 10 ? `${n} دقائق` : `${n} دقيقة`);
+export const fmtDate = (iso) => {
+  const d = new Date(iso);
+  return isNaN(d) ? '' : d.toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+};
+export const desc = (s, n = 155) => {
+  const t = String(s || '').replace(/\s+/g, ' ').trim();
+  return t.length <= n ? t : t.slice(0, n - 1).replace(/\s+\S*$/, '') + '…';
+};
+
+// تفكيك مقال الحلقة المخزَّن كـ HTML إلى أجزاء يعيد القالب ترتيبها
+export function parseArticle(html) {
+  let note = '', spoiler = false;
+  let body = String(html || '').replace(/<p><small>([\s\S]*?)<\/small><\/p>/g, (m, t) => { note = strip(t); return ''; });
+  body = body.replace(/<p><strong>تنبيه[^<]*<\/strong><\/p>/, () => { spoiler = true; return ''; });
+  const parts = body.split(/<h2>([\s\S]*?)<\/h2>/);
+  const lead = parts[0].trim();
+  const sections = [];
+  let card = [], faq = [];
+  for (let i = 1; i < parts.length; i += 2) {
+    const title = strip(parts[i]), inner = (parts[i + 1] || '').trim();
+    if (title === 'بطاقة العمل') card = [...inner.matchAll(/<tr><th>([\s\S]*?)<\/th><td>([\s\S]*?)<\/td><\/tr>/g)].map((m) => [strip(m[1]), strip(m[2])]);
+    else if (title === 'أسئلة شائعة') faq = [...inner.matchAll(/<h3>([\s\S]*?)<\/h3>\s*<p>([\s\S]*?)<\/p>/g)].map((m) => ({ q: strip(m[1]), a: strip(m[2]) }));
+    else if (title === 'أعمال ذات صلة') continue;
+    else sections.push({ title, html: inner });
+  }
+  return { spoiler, lead, sections, card, faq, note };
+}
+
+function blurb(f, up) {
+  if (up) {
+    const u = [`مسلسل مصري مرتقب ضمن أعمال رمضان ${f.year}`];
+    if (f.cast?.length) u.push('بطولة ' + joinAr(f.cast.slice(0, 4)));
+    if (f.directors?.length) u.push('وإخراج ' + joinAr(f.directors));
+    return u.join('، ') + '.';
+  }
+  const kind = f.kind || f.category || 'عمل';
+  const a = [`${kind}${f.countries?.length ? ' من إنتاج ' + joinAr(f.countries) : ''}${f.year ? ' عُرض عام ' + f.year : ''}`];
+  if (f.genres?.length) a.push('من فئة ' + joinAr(f.genres));
+  if (f.cast?.length) a.push('بطولة ' + joinAr(f.cast.slice(0, 4)));
+  if (f.directors?.length) a.push('وإخراج ' + joinAr(f.directors));
+  return a.join('، ') + '.';
+}
+
+let cache;
 export const minutes = (n) => (n === 1 ? 'دقيقة واحدة' : n === 2 ? 'دقيقتان' : n <= 10 ? `${n} دقائق` : `${n} دقيقة`);
 export const fmtDate = (iso) => {
   const d = new Date(iso);
@@ -81,6 +153,9 @@ export function load() {
   if (cache) return cache;
   const recs = readJsonl('recaps.jsonl');
   const items = readJsonl('site_items.jsonl');
+  // توحيد أشكال الحروف في الأسماء والأنواع (ﻛﻮﻣﻴﺪﻱ → كوميدي) قبل أي عرض أو تجميع
+  const fixNames = (f) => { if (!f) return; for (const k of ['genres', 'cast', 'directors', 'writers', 'countries']) if (Array.isArray(f[k])) f[k] = [...new Set(f[k].map(norm).filter(Boolean))]; };
+  items.forEach((o) => fixNames(o.facts)); recs.forEach((o) => fixNames(o.facts));
   const itemBy = new Map(items.map((o) => [o.work_id, o]));
   const groups = new Map();
   for (const o of recs) {
@@ -130,6 +205,7 @@ export function load() {
       parsed: parseArticle(o.html), excerpt: o.excerpt || blurb(f, false), blurb: o.excerpt || blurb(f, false), schema: o.schema || null,
       mins: Math.max(1, Math.round(strip(o.html).split(/\s+/).length / 180)) };
   }).sort((a, b) => String(b.at).localeCompare(String(a.at)));
-  cache = { films, series: all, episodes: episodes.sort(byDate), live: all.filter((x) => !x.upcoming), upcoming: all.filter((x) => x.upcoming) };
+  const live = all.filter((x) => !x.upcoming);
+  cache = { films, series: all, episodes: episodes.sort(byDate), live, upcoming: all.filter((x) => x.upcoming), tax: buildTax([...live.filter((x) => !x.noindex), ...films]) };
   return cache;
 }

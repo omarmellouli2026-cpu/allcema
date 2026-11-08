@@ -3,15 +3,18 @@ import Base from '../../../layouts/Base.astro';
 import EpRow from '../../../components/EpRow.astro';
 import Strip from '../../../components/Strip.astro';
 import Poster from '../../../components/Poster.astro';
-import { load, joinAr, num } from '../../../lib/data.js';
+import Airings from '../../../components/Airings.astro';
+import { load, joinAr, num, linkList } from '../../../lib/data.js';
 export function getStaticPaths() {
   return load().series.map((s) => ({ params: { slug: s.slug }, props: { s } }));
 }
 const { s } = Astro.props;
 const f = s.facts;
 const desc = [...s.episodes].reverse();
-const rows = [['التصنيف', joinAr(f.genres)], ['بلد الإنتاج', joinAr(f.countries)], ['الإخراج', joinAr(f.directors)], ['التأليف', joinAr(f.writers)],
-  ['البطولة', joinAr(f.cast)], ['اللغة', joinAr(f.languages)]].filter((r) => r[1]);
+const rows = s.upcoming ? [['التصنيف', joinAr(f.genres)], ['بلد الإنتاج', joinAr(f.countries)], ['الإخراج', joinAr(f.directors)], ['التأليف', joinAr(f.writers)],
+  ['البطولة', joinAr(f.cast)], ['اللغة', joinAr(f.languages)]].filter((r) => r[1]) :
+  [['التصنيف', linkList('g', f.genres)], ['بلد الإنتاج', linkList('c', f.countries)], ['الإخراج', linkList('p', f.directors)], ['التأليف', linkList('p', f.writers)],
+  ['البطولة', linkList('p', f.cast)], ['اللغة', joinAr(f.languages)]].filter((r) => r[1]);
 const abs = (p) => new URL(p, Astro.site).href;
 const schema = [{ '@context': 'https://schema.org', '@type': 'TVSeries', name: s.title, ...(s.alt ? { alternateName: s.alt } : {}), url: abs(s.path),
   inLanguage: 'ar', ...(f.year ? { datePublished: String(f.year) } : {}), ...(f.genres?.length ? { genre: f.genres } : {}),
@@ -47,7 +50,8 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'TVSeries', name: s
     </div>
     <aside>
       <div class="box"><h2>عن المسلسل</h2><p style="margin:0 0 10px;font-size:.97rem;line-height:1.9">{s.blurb}</p>
-        <dl class="card">{rows.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}</dl>{s.upcoming && <p class="img-cap">المعلومات من تقارير صحفية منشورة عن أعمال رمضان {f.year}، وقد تتغير قبل العرض.</p>}</div>
+        <dl class="card">{rows.map(([k, v]) => <div><dt>{k}</dt><dd set:html={v} /></div>)}</dl>{s.upcoming && <p class="img-cap">المعلومات من تقارير صحفية منشورة عن أعمال رمضان {f.year}، وقد تتغير قبل العرض.</p>}</div>
+      {!s.upcoming && <Airings f={f} />}
     </aside>
   </div>
 </Base>

@@ -1,0 +1,21 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Hub from '../../../components/Hub.astro';
+import { load, joinAr } from '../../../lib/data.js';
+export function getStaticPaths() {
+  return load().tax.countries.map((c) => ({ params: { slug: c.slug }, props: { c } }));
+}
+const { c } = Astro.props;
+const abs = (x) => new URL(x, Astro.site).href;
+const path = `/countries/${c.slug}/`;
+const description = `مسلسلات وأفلام من إنتاج ${c.name}: ${c.count} عملًا منها ${joinAr(c.list.slice(0, 4).map((w) => w.title))}.`;
+const schema = [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: `أعمال ${c.name}`, url: abs(path),
+  mainEntity: { '@type': 'ItemList', itemListElement: c.list.map((w, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(w.path), name: w.title })) } }];
+---
+<Base title={`مسلسلات وأفلام ${c.name}`} description={description} path={path} schema={schema} active="countries">
+  <section class="band page-head"><div class="wrap">
+    <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>{c.name}</nav>
+    <h1>مسلسلات وأفلام {c.name}</h1>
+  </div></section>
+  <Hub works={c.list} label="الأعمال" />
+</Base>

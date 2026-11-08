@@ -1,0 +1,6 @@
+---
+import Tile from './Tile.astro';
+const { works, label = 'الأعمال' } = Astro.props;
+---
+<div class="wrap"><section class="section"><div class="sec-head"><h2>{label} ({works.length})</h2></div>
+  <div class="tiles" style="margin-top:20px">{works.map((w) => <Tile s={w} />)}</div></section></div>

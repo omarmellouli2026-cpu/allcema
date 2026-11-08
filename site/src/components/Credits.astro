@@ -1,0 +1,7 @@
+---
+import { linkList } from '../lib/data.js';
+const { f, title = 'فريق العمل والتصنيف' } = Astro.props;
+const rows = [['الإخراج', linkList('p', f.directors)], ['التأليف', linkList('p', f.writers)], ['البطولة', linkList('p', f.cast)],
+  ['النوع', linkList('g', f.genres)], ['بلد الإنتاج', linkList('c', f.countries)]].filter((r) => r[1]);
+---
+{rows.length > 0 && <div class="box"><h2>{title}</h2><dl class="card">{rows.map(([k, v]) => <div><dt>{k}</dt><dd set:html={v} /></div>)}</dl></div>}

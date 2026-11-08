@@ -2,6 +2,8 @@
 import Base from '../../../layouts/Base.astro';
 import Tile from '../../../components/Tile.astro';
 import Poster from '../../../components/Poster.astro';
+import Credits from '../../../components/Credits.astro';
+import Airings from '../../../components/Airings.astro';
 import { load, joinAr, desc, fmtDate, minutes } from '../../../lib/data.js';
 export function getStaticPaths() {
   return load().films.map((m) => ({ params: { slug: m.slug }, props: { m } }));
@@ -38,6 +40,8 @@ const faq = p.faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage
     </article>
     <aside>
       {p.card.length > 0 && <div class="box"><h2>بطاقة الفيلم</h2><dl class="card">{p.card.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}</dl></div>}
+      <Credits f={f} />
+      <Airings f={f} />
     </aside>
   </div>
   {others.length > 0 && <div class="wrap"><section class="section"><div class="sec-head"><h2>أفلام أخرى</h2><a href="/films/">كل الأفلام</a></div><div class="tiles">{others.map((x) => <Tile s={x} />)}</div></section></div>}

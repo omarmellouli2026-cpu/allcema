@@ -1,0 +1,20 @@
+---
+import Base from '../../layouts/Base.astro';
+import { load } from '../../lib/data.js';
+const { people } = load().tax;
+const dirs = people.filter((p) => p.roles.has('dir')), cast = people.filter((p) => p.roles.has('cast') && !p.roles.has('dir'));
+const abs = (x) => new URL(x, Astro.site).href;
+const schema = [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'الممثلون والمخرجون', url: abs('/people/'),
+  mainEntity: { '@type': 'ItemList', itemListElement: people.slice(0, 100).map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(`/people/${p.slug}/`), name: p.name })) } }];
+---
+<Base title="الممثلون والمخرجون" description="أبرز الممثلين والمخرجين في الأعمال المصرية الجديدة، مع أعمال كل منهم من مسلسلات وأفلام." path="/people/" schema={schema} active="people">
+  <section class="band page-head"><div class="wrap">
+    <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>الممثلون والمخرجون</nav>
+    <h1>الممثلون والمخرجون</h1>
+  </div></section>
+  <div class="wrap">
+    {dirs.length > 0 && <section class="section"><div class="sec-head"><h2>المخرجون</h2></div><div class="chips">{dirs.map((p) => <a class="chip" href={`/people/${p.slug}/`}>{p.name}<small>{p.count}</small></a>)}</div></section>}
+    {cast.length > 0 && <section class="section"><div class="sec-head"><h2>الممثلون</h2></div><div class="chips">{cast.map((p) => <a class="chip" href={`/people/${p.slug}/`}>{p.name}<small>{p.count}</small></a>)}</div></section>}
+    {people.length === 0 && <p class="empty">لا توجد صفحات أشخاص بعد.</p>}
+  </div>
+</Base>

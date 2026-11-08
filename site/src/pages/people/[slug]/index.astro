@@ -1,0 +1,29 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Hub from '../../../components/Hub.astro';
+import { load, joinAr, roleText } from '../../../lib/data.js';
+export function getStaticPaths() {
+  return load().tax.people.map((p) => ({ params: { slug: p.slug }, props: { p } }));
+}
+const { p } = Astro.props;
+const abs = (x) => new URL(x, Astro.site).href;
+const path = `/people/${p.slug}/`;
+const role = roleText(p);
+const titles = p.list.map((w) => w.title);
+const description = `${p.name} (${role}): ${p.count} أعمال مصرية منشورة على Allcema، منها ${joinAr(titles.slice(0, 4))}.`;
+const byRole = [['dir', 'إخراج'], ['writer', 'تأليف'], ['cast', 'تمثيل']].map(([k, l]) => [l, p.list.filter((w) => p.works.get(w).has(k))]).filter((r) => r[1].length);
+const schema = [
+  { '@context': 'https://schema.org', '@type': 'Person', name: p.name, url: abs(path), ...(p.roles.has('dir') ? { jobTitle: 'مخرج' } : p.roles.has('cast') ? { jobTitle: 'ممثل' } : {}), nationality: 'مصر',
+    subjectOf: p.list.map((w) => ({ '@type': w.isFilm ? 'Movie' : 'TVSeries', name: w.title, url: abs(w.path) })) },
+  { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: abs('/') }, { '@type': 'ListItem', position: 2, name: 'الممثلون والمخرجون', item: abs('/people/') },
+    { '@type': 'ListItem', position: 3, name: p.name, item: abs(path) }] }];
+---
+<Base title={`أعمال ${p.name}`} description={description} path={path} schema={schema} active="people">
+  <section class="band page-head"><div class="wrap">
+    <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span><a href="/people/">الممثلون والمخرجون</a><span>/</span>{p.name}</nav>
+    <h1>{p.name}</h1>
+    <ul class="facts"><li>{role}</li><li>{p.count} أعمال على Allcema</li></ul>
+  </div></section>
+  {byRole.map(([l, works]) => <Hub works={works} label={l} />)}
+</Base>

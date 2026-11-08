@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import { load } from '../../lib/data.js';
+const { genres } = load().tax;
+---
+<Base title="الأنواع" description="تصفّح المسلسلات والأفلام المصرية حسب النوع: كوميدي، دراما، أكشن، تشويق وغيرها." path="/genres/" active="genres">
+  <section class="band page-head"><div class="wrap">
+    <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>الأنواع</nav>
+    <h1>الأنواع</h1>
+  </div></section>
+  <div class="wrap"><section class="section">
+    {genres.length ? <div class="chips">{genres.map((g) => <a class="chip" href={`/genres/${g.slug}/`}>{g.name}<small>{g.count}</small></a>)}</div> : <p class="empty">لا توجد أنواع بعد.</p>}
+  </section></div>
+</Base>

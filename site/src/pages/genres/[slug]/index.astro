@@ -1,0 +1,24 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Hub from '../../../components/Hub.astro';
+import { load, joinAr } from '../../../lib/data.js';
+export function getStaticPaths() {
+  return load().tax.genres.map((g) => ({ params: { slug: g.slug }, props: { g } }));
+}
+const { g } = Astro.props;
+const abs = (x) => new URL(x, Astro.site).href;
+const path = `/genres/${g.slug}/`;
+const description = `أعمال مصرية من نوع ${g.name}: ${g.count} مسلسلًا وفيلمًا منها ${joinAr(g.list.slice(0, 4).map((w) => w.title))}.`;
+const schema = [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: `أعمال ${g.name}`, url: abs(path),
+  mainEntity: { '@type': 'ItemList', itemListElement: g.list.map((w, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(w.path), name: w.title })) } },
+  { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: abs('/') }, { '@type': 'ListItem', position: 2, name: 'الأنواع', item: abs('/genres/') },
+    { '@type': 'ListItem', position: 3, name: g.name, item: abs(path) }] }];
+---
+<Base title={`أعمال ${g.name} المصرية`} description={description} path={path} schema={schema} active="genres">
+  <section class="band page-head"><div class="wrap">
+    <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span><a href="/genres/">الأنواع</a><span>/</span>{g.name}</nav>
+    <h1>أعمال {g.name} المصرية</h1>
+  </div></section>
+  <Hub works={g.list} label="الأعمال" />
+</Base>

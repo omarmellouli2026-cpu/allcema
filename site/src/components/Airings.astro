@@ -1,0 +1,9 @@
+---
+const { f } = Astro.props;
+const list = (f.tv_airings || []).filter((a) => a.channel);
+const by = new Map();
+for (const a of list) { if (!by.has(a.channel)) by.set(a.channel, []); by.get(a.channel).push(a); }
+---
+{by.size > 0 && <div class="box"><h2>أين يُعرض</h2>
+  {[...by].map(([ch, rows]) => <div class="air"><b>{ch}</b><ul>{rows.map((r) => <li>{[r.date, r.time].filter(Boolean).join(' · ')}</li>)}</ul></div>)}
+  <p class="img-cap">مواعيد العرض على القنوات وقت آخر تحديث لبياناتنا، وقد تتغير. تحقّق من جدول القناة قبل المتابعة.</p></div>}

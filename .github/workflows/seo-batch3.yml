@@ -1,0 +1,31 @@
+name: seo-batch3
+# يُنفَّذ مرة واحدة عند حفظ هذا الملف: إعادة بناء صفحة الحلقات (SEO وترقيم وتجميع باليوم)، مع اختبار بناء قبل الحفظ
+on:
+  push:
+    paths:
+      - ".github/workflows/seo-batch3.yml"
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PAYLOAD: "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"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Apply patch
+        run: echo "$PAYLOAD" | base64 -d | gunzip > /tmp/patch.py && python3 /tmp/patch.py
+      - name: Verify build
+        working-directory: site
+        run: npm install && npm run build
+      - name: Commit
+        run: |
+          git config user.name "allcema-bot"; git config user.email "bot@users.noreply.github.com"
+          git add -A site
+          git diff --cached --quiet || (git commit -m "site: episodes listing page SEO and pagination" && git pull --rebase && git push)

@@ -18,7 +18,8 @@ const url = new URL(path, Astro.site).href;
 const iso = (d) => { const t = new Date(d); return d && !isNaN(t) ? t.toISOString() : ''; };
 const pubIso = iso(published), modIso = iso(modified);
 const fullTitle = title === SITE_NAME ? `${SITE_NAME} | ${SITE_TAGLINE}` : `${title} | ${SITE_NAME}`;
-const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المسلسلات'], ...(hasFilms ? [['films', '/films/', 'الأفلام']] : []), ['episodes', '/episodes/', 'الحلقات'], ['search', '/search/', 'بحث']];
+const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المسلسلات'], ...(hasFilms ? [['films', '/films/', 'الأفلام']] : []), ['episodes', '/episodes/', 'الحلقات']];
+const more = [...(LD.tax.genres.length ? [['genres', '/genres/', 'الأنواع']] : []), ...(LD.tax.people.length ? [['people', '/people/', 'الممثلون والمخرجون']] : []), ...(hasUp ? [['ramadan', '/ramadan-2027/', 'رمضان 2027']] : [])];
 ---
 <!doctype html>
 <html lang="ar" dir="rtl">
@@ -56,7 +57,13 @@ const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المس
 <body>
   <header class="site-head"><div class="wrap">
     <a class="logo" href="/" aria-label={SITE_NAME}><i></i>{SITE_NAME}</a>
-    <nav aria-label="التنقل الرئيسي">{nav.map(([k, h, t]) => <a href={h} aria-current={active === k ? 'page' : undefined}>{t}</a>)}</nav>
+    <nav class="main-nav" aria-label="التنقل الرئيسي">{nav.map(([k, h, t]) => <a href={h} aria-current={active === k ? 'page' : undefined}>{t}</a>)}</nav>
+    <div class="head-tools">
+      <a class="icon-btn srch" href="/search/" aria-label="بحث في الموقع" aria-current={active === 'search' ? 'page' : undefined}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></a>
+      <details class="menu"><summary class="icon-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg></summary>
+        <nav class="menu-panel" aria-label="القائمة">{nav.map(([k, h, t]) => <a href={h} aria-current={active === k ? 'page' : undefined}>{t}</a>)}{more.length > 0 && <hr />}{more.map(([k, h, t]) => <a href={h} aria-current={active === k ? 'page' : undefined}>{t}</a>)}</nav>
+      </details>
+    </div>
   </div></header>
   <main><slot /></main>
   <footer class="site-foot"><div class="wrap">

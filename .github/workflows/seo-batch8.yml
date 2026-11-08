@@ -1,0 +1,31 @@
+name: seo-batch8
+# يُنفَّذ مرة واحدة: بريد التواصل الرسمي وصياغة الترخيص للصور
+on:
+  push:
+    paths:
+      - ".github/workflows/seo-batch8.yml"
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PAYLOAD: "H4sIALKp8GoC/7VV3UobQRS+36c4nSLu1LhWEJGEQG1VKlgj1rsYymZ3Nhndn2Fm0yi1F4o/RQp9CC8igoVSbPFNdt+mZ2aNP1GrSBvYzMyZc873fefMzj6H0Rej4CU+j1tl6KTB6JS2WHPzC7PvoQqfPlfgXW1GT+uNCkwvLc0uzlwsXs8vGg/LOIyg0QKbKOmNeUkc8JazpkgJyNYWDKMhdb30FdtwIxEyx0ui4crgphuGHovci01a6mcTboupMcUkx6Guwk6rMcZjn204rkplotMM53v5bnaW70DWy3fzvewnLvXzFbLTfCf/gs8B4PooO8tOs152nB/gHtoP82/ZefYj+wX5Qb6f9dAJ3U60Dfe2ITvWGbNzDeAMP4B1LRvGneDke36IiBrpXh6YdVBrwMPoPqk30bcRUnP4tzr/hvM0jbckus2kkw5qu4o3BG+o6BU69gvswuNBJYDEd7LfztOTX9eoXR6BNSjVS8Sm5K32LbmDiHfmPtLZ9ey6loHIR5G8nQiJNiyLRyKRKSSqBGoT/5quYpMT1nKttoKvd6IcFn/kMomdFkttos2ageIpI9TyWQDStwUtg2RpR8aQCBbbGCXctO2sJTy2dUgJBC0Bi4ubpkrMTUOoI5nr20WarrQFUqBlC/AXiAL8dpqKNkfuOvO5VJdIuIjdiNmBwdngKv2QrFdXZIfpAM0pwOykS+5i0ZWoxlbU8lyvzYpLLUgkYEQS+iWIWRd4bC7Cgp1CH+NriiIooLMpg9nlASi8xTpxamM4hWdVGC/i9E9IjhtkevHN29oyzE3PL4A95NMygaEbYSUNT7aI4VAvT71sYLVE6HrMJqux7sEqDhTlYdsclJza4wW+YVYXDSSpLmP6QmhfmdKSChGoPlI29rDfgxs+5ltwv0/kynUmL3yLD0Qh1utIZGDKokvS75Rpjrr7iFBgoWJASL+ORXKIk9Sw7cg+Pk4diS8SF6YaFEZAjzhcMWvqGPxKXXL/ryereXmQijfIaU5O+AyPGhootS7ajim9NrhChJz5hFp/AHKw+jqBBwAA"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Apply patch
+        run: echo "$PAYLOAD" | base64 -d | gunzip > /tmp/patch.py && python3 /tmp/patch.py
+      - name: Verify build
+        working-directory: site
+        run: npm install && npm run build
+      - name: Commit
+        run: |
+          git config user.name "allcema-bot"; git config user.email "bot@users.noreply.github.com"
+          git add -A site
+          git diff --cached --quiet || (git commit -m "site: contact email and image license wording" && git pull --rebase && git push)

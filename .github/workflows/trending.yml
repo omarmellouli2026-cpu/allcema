@@ -35,6 +35,8 @@ jobs:
           LLM_PROVIDER: gemini
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
         run: python elcinema_trending.py --data-dir elcinema_data --ids-dir /tmp/trending_ids --min-year 2026 --max-new ${{ inputs.max_new || 4 }}
       - name: Fetch the new works from elcinema
         run: |

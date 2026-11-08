@@ -1,0 +1,75 @@
+name: trending-daily
+# كل يوم: Gemini يبحث في الويب عن المسلسلات والأفلام المصرية الأكثر بحثًا ومشاهدة،
+# فنحدّث صفحة «الأكثر مشاهدة»، ونضيف إلى الموقع الجديد المؤهل منها فقط (مصر، 2026 فصاعدًا، بحد أقصى يومي)
+on:
+  schedule:
+    - cron: "25 6 * * *"
+  workflow_dispatch:
+    inputs:
+      max_new:
+        description: max new works per kind
+        default: "4"
+
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+
+jobs:
+  trending:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      UA: elcinema-licensed-sync (${{ github.repository_owner }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Discover new works on elcinema
+        continue-on-error: true
+        run: python elcinema_scraper.py update --data-dir elcinema_data --sitemap --probe-misses 100 --max-new 30 --user-agent "$UA"
+      - name: Rank the most searched works with Gemini
+        env:
+          LLM_PROVIDER: gemini
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+        run: python elcinema_trending.py --data-dir elcinema_data --ids-dir /tmp/trending_ids --min-year 2026 --max-new ${{ inputs.max_new || 4 }}
+      - name: Fetch the new works from elcinema
+        run: |
+          S=$(cat /tmp/trending_ids/new_series.txt); F=$(cat /tmp/trending_ids/new_films.txt)
+          if [ -n "$S$F" ]; then python elcinema_scraper.py fetch --ids $S $F --refresh --data-dir elcinema_data --user-agent "$UA"; else echo "no new works today"; fi
+      - name: Write and publish new films
+        env:
+          LLM_PROVIDER: deepseek
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+        run: |
+          F=$(cat /tmp/trending_ids/new_films.txt)
+          if [ -n "$F" ]; then
+            python elcinema_publish.py run --data-dir elcinema_data --no-only-series --only-films --work-ids $F --min-year 2026 --countries "مصر" --limit 4 --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}" --credit-line "${{ vars.DISCLOSURE_LINE }}"
+          fi
+      - name: Write and publish new series and their episode recaps
+        env:
+          LLM_PROVIDER: deepseek
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+        run: |
+          S=$(cat /tmp/trending_ids/new_series.txt)
+          if [ -n "$S" ]; then
+            python elcinema_publish.py run --data-dir elcinema_data --work-ids $S --min-year 2026 --countries "مصر" --limit 4 --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}" --credit-line "${{ vars.DISCLOSURE_LINE }}"
+            python elcinema_recaps.py --data-dir elcinema_data --work-ids $S --expect-episodes --retry-held-hours 5 --limit 6 --daily-cap 12 --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}" --credit-line "${{ vars.DISCLOSURE_LINE }}"
+            for id in $S; do grep -qx "$id" elcinema_data/trending_watch.txt 2>/dev/null || echo "$id" >> elcinema_data/trending_watch.txt; done
+          fi
+      - name: Save data to repo
+        if: always()
+        run: |
+          git config user.name "elcinema-bot"; git config user.email "bot@users.noreply.github.com"
+          python - <<'PY'
+          import glob, sqlite3
+          for p in glob.glob("elcinema_data/*.sqlite"):
+              c = sqlite3.connect(p); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()
+          PY
+          git add -A elcinema_data
+          git diff --cached --quiet || (git commit -m "trending: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

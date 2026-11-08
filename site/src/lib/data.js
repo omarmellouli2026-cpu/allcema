@@ -88,7 +88,8 @@ export function load() {
     if (!groups.has(wid)) groups.set(wid, []);
     groups.get(wid).push(o);
   }
-  for (const o of items) if (!groups.has(o.work_id)) groups.set(o.work_id, []);
+  const isFilm = (o) => (o.facts && o.facts.kind) === 'فيلم';
+  for (const o of items) if (!groups.has(o.work_id) && !isFilm(o)) groups.set(o.work_id, []);
 
   const series = [], episodes = [];
   for (const [wid, recList] of groups) {
@@ -121,6 +122,14 @@ export function load() {
   }
   const byDate = (a, b) => String(b.at).localeCompare(String(a.at)) || (b.ep || 0) - (a.ep || 0);
   const all = series.sort(byDate);
-  cache = { series: all, episodes: episodes.sort(byDate), live: all.filter((x) => !x.upcoming), upcoming: all.filter((x) => x.upcoming) };
+  // الأفلام: عناصر site_items من نوع «فيلم»؛ كل فيلم صفحة واحدة بلا حلقات
+  const films = items.filter(isFilm).map((o) => {
+    const f = o.facts, slug = `${latin(f.alt_title) || slugify(f.title)}-${idStr(o.work_id)}`;
+    return { kind: 'film', isFilm: true, id: o.work_id, title: f.title, headline: o.title, alt: f.alt_title || '', slug, path: `/films/${slug}/`, facts: f, item: o,
+      hue: [...f.title].reduce((a, c) => a + c.charCodeAt(0), 0) % 360, image: '', count: 0, at: o.at || '',
+      parsed: parseArticle(o.html), excerpt: o.excerpt || blurb(f, false), blurb: o.excerpt || blurb(f, false), schema: o.schema || null,
+      mins: Math.max(1, Math.round(strip(o.html).split(/\s+/).length / 180)) };
+  }).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  cache = { films, series: all, episodes: episodes.sort(byDate), live: all.filter((x) => !x.upcoming), upcoming: all.filter((x) => x.upcoming) };
   return cache;
 }

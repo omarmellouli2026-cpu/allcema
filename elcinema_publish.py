@@ -112,6 +112,11 @@ def scope_sql(args, alias: str = "") -> tuple[str, list]:
     sql, params = "", []
     if getattr(args, "only_series", False):
         sql += f" AND {p}is_series=1"
+    if getattr(args, "only_films", False):
+        sql += f" AND {p}is_series=0"
+    ids_ = [int(x) for x in (getattr(args, "work_ids", None) or [])]
+    if ids_:
+        sql += f" AND {p}work_id IN ({','.join(str(i) for i in ids_)})"
     for cn in [x.strip() for x in (getattr(args, "countries", "") or "").split(",") if x.strip()]:
         sql += f" AND {p}countries LIKE ?"
         params.append(f"%{cn}%")
@@ -575,6 +580,8 @@ def main(argv=None) -> int:
     r.add_argument("--only-series", action=argparse.BooleanOptionalAction, default=True,
                    help="مسلسلات فقط (افتراضي)؛ --no-only-series لتشمل الأفلام")
     r.add_argument("--countries", default="مصر", help="بلد/بلدان الإنتاج المسموحة مفصولة بفاصلة؛ فارغ = كل البلدان")
+    r.add_argument("--only-films", action="store_true", help="أفلام فقط (مع --no-only-series)")
+    r.add_argument("--work-ids", type=int, nargs="+", help="اقصر العمل على هذه الأعمال فقط")
     s = sub.add_parser("status")
     s.add_argument("--data-dir", default="elcinema_data")
     a = ap.parse_args(argv)

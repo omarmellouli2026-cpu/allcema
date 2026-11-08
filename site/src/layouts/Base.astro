@@ -11,11 +11,12 @@ import { load } from '../lib/data.js';
 const LD = load();
 const footSeries = LD.live.slice(0, 6);
 const hasUp = LD.upcoming.length > 0;
+const hasFilms = LD.films.length > 0;
 const { title, description = SITE_TAGLINE, path = '/', schema = [], noindex = false, type = 'website', active = '', image = '' } = Astro.props;
 const imgUrl = image ? new URL(image, Astro.site).href : '';
 const url = new URL(path, Astro.site).href;
 const fullTitle = title === SITE_NAME ? `${SITE_NAME} | ${SITE_TAGLINE}` : `${title} | ${SITE_NAME}`;
-const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المسلسلات'], ['episodes', '/episodes/', 'الحلقات'], ['search', '/search/', 'بحث']];
+const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المسلسلات'], ...(hasFilms ? [['films', '/films/', 'الأفلام']] : []), ['episodes', '/episodes/', 'الحلقات'], ['search', '/search/', 'بحث']];
 ---
 <!doctype html>
 <html lang="ar" dir="rtl">
@@ -48,7 +49,7 @@ const nav = [['home', '/', 'الرئيسية'], ['series', '/series/', 'المس
   <footer class="site-foot"><div class="wrap">
     <div class="foot-grid">
       <div><b>{SITE_NAME}</b>{SITE_TAGLINE}. نكتب كل ملخص بصياغتنا، ونعتمد فيه على مصادر منشورة، ونضع تنبيه الحرق في أوله.</div>
-      <nav aria-label="روابط التذييل"><b>الموقع</b><a href="/series/">المسلسلات</a>{hasUp && <a href="/ramadan-2027/">رمضان 2027</a>}<a href="/episodes/">الحلقات</a><a href="/about/">من نحن</a><a href="/privacy/">الخصوصية</a><a href="/contact/">اتصل بنا</a><a href="/rss.xml">RSS</a></nav>
+      <nav aria-label="روابط التذييل"><b>الموقع</b><a href="/series/">المسلسلات</a>{hasFilms && <a href="/films/">الأفلام</a>}{hasUp && <a href="/ramadan-2027/">رمضان 2027</a>}<a href="/episodes/">الحلقات</a><a href="/about/">من نحن</a><a href="/privacy/">الخصوصية</a><a href="/contact/">اتصل بنا</a><a href="/rss.xml">RSS</a></nav>
       {footSeries.length > 0 && <nav aria-label="المسلسلات"><b>المسلسلات</b>{footSeries.map((x) => <a href={x.path}>{x.title}</a>)}</nav>}
     </div>
     <small>{DISCLOSURE && <>{DISCLOSURE} </>}© {new Date().getFullYear()} {SITE_NAME}</small>

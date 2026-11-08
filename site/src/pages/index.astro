@@ -6,7 +6,12 @@ import { SITE_NAME, SITE_TAGLINE } from '../config.js';
 import { load, desc } from '../lib/data.js';
 const { live: series, episodes, upcoming, films } = load();
 const top = episodes[0] || null;
-const rest = episodes.slice(0, 6);
+// قائمة قصيرة: أحدث حلقة من كل مسلسل غير الظاهر في الأعلى، بحدّ أقصى 4
+const others = episodes.slice(1);
+const seenS = new Set(top ? [top.series.title] : []);
+const rest = [];
+for (const e of others) { if (!seenS.has(e.series.title)) { seenS.add(e.series.title); rest.push(e); } if (rest.length >= 4) break; }
+for (const e of others) { if (rest.length >= 3) break; if (!rest.includes(e)) rest.push(e); }
 const schema = [{ '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url: new URL('/', Astro.site).href, inLanguage: 'ar',
   potentialAction: { '@type': 'SearchAction', target: new URL('/search/?q={q}', Astro.site).href, 'query-input': 'required name=q' } }];
 ---
@@ -17,29 +22,30 @@ const schema = [{ '@context': 'https://schema.org', '@type': 'WebSite', name: SI
       <p class="lead">نتابع المسلسلات المعروضة ونكتب ما جرى في كل حلقة بأسلوبنا، مع تنبيه حرق واضح في أول كل ملخص.</p>
       {top && <a class="feature" href={top.path}>
         <b>مسلسل {top.series.title} حلقة {top.ep}</b>
-        <span class="ex">{desc(top.excerpt, 220)}</span>
+        <span class="ex">{desc(top.excerpt, 170)}</span>
         <span class="btn">اقرأ ملخص الحلقة</span>
       </a>}
     </div>
     {top && <div class="num hero-num" aria-hidden="true">{top.numeral}<small>{top.series.title}</small></div>}
   </div></section>
 
-  {rest.length > 0 ? <div class="wrap">
-    <section class="section">
+  <div class="wrap">
+    {rest.length > 0 && <section class="section">
       <div class="sec-head"><h2>آخر الحلقات</h2><a href="/episodes/">كل الحلقات</a></div>
-      <ul class="ep-list">{rest.map((e) => <EpRow e={e} />)}</ul>
-    </section>
-    <section class="section">
+      <ul class="ep-list compact">{rest.map((e) => <EpRow e={e} />)}</ul>
+    </section>}
+    {series.length > 0 && <section class="section">
       <div class="sec-head"><h2>المسلسلات</h2><a href="/series/">كل المسلسلات</a></div>
-      <div class="tiles">{series.slice(0, 6).map((s) => <Tile s={s} />)}</div>
-    </section>
+      <div class="tiles row">{series.slice(0, 5).map((s) => <Tile s={s} />)}</div>
+    </section>}
     {films.length > 0 && <section class="section">
       <div class="sec-head"><h2>أفلام مصرية جديدة</h2><a href="/films/">كل الأفلام</a></div>
-      <div class="tiles">{films.slice(0, 4).map((m) => <Tile s={m} />)}</div>
+      <div class="tiles row">{films.slice(0, 5).map((m) => <Tile s={m} />)}</div>
     </section>}
-    {upcoming.length > 0 && <section class="section">
-      <div class="sec-head"><h2>رمضان 2027 قادم</h2><a href="/ramadan-2027/">كل المسلسلات المعلنة</a></div>
-      <div class="tiles">{upcoming.slice(0, 4).map((s) => <Tile s={s} />)}</div>
-    </section>}
-  </div> : <div class="wrap"><p class="empty">لم تُنشر ملخصات بعد. تعود الصفحة إلى العمل فور نشر أول حلقة.</p></div>}
+    {upcoming.length > 0 && <a class="rmd" href="/ramadan-2027/">
+      <div><b>رمضان 2027 قادم</b><span>{upcoming.length} مسلسلًا معلنًا حتى الآن، مع الأبطال وما نعرفه عن كل عمل.</span></div>
+      <span class="btn">تصفّح المسلسلات المعلنة</span>
+    </a>}
+    {rest.length === 0 && series.length === 0 && films.length === 0 && <p class="empty">لم تُنشر ملخصات بعد. تعود الصفحة إلى العمل فور نشر أول حلقة.</p>}
+  </div>
 </Base>

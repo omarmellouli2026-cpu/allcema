@@ -28,6 +28,7 @@ jobs:
       UA: elcinema-licensed-sync (${{ github.repository_owner }})
       SER_BATCH: "10"
       FILM_BATCH: "15"
+      BROWSER_MAX_REQ: "20"
       LLM_PROVIDER: deepseek
       DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
       DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
@@ -64,19 +65,19 @@ jobs:
         run: if [ -n "$S" ]; then python elcinema_scraper.py fetch --ids $S --refresh --data-dir elcinema_data --user-agent "$UA"; fi
       - name: Write and publish film articles
         run: >
-          if [ -n "$F" ]; then python elcinema_publish.py run --data-dir elcinema_data --no-only-series --only-films
+          if [ -n "$F" ]; then python elcinema_browser.py publish --data-dir elcinema_data --no-only-series --only-films
           --work-ids $F --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 15 }}
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
       - name: Write and publish series articles
         run: >
-          if [ -n "$S" ]; then python elcinema_publish.py run --data-dir elcinema_data
+          if [ -n "$S" ]; then python elcinema_browser.py publish --data-dir elcinema_data
           --work-ids $S --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 15 }}
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
       - name: Write episode recaps for the new series
         run: >
-          if [ -n "$S" ]; then python elcinema_recaps.py --data-dir elcinema_data
+          if [ -n "$S" ]; then python elcinema_browser.py recaps --data-dir elcinema_data
           --work-ids $S --expect-episodes --retry-held-hours 5
           --min-year 2026 --countries "مصر" --limit ${{ inputs.recaps || 25 }} --daily-cap 150
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"

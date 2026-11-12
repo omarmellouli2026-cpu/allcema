@@ -54,7 +54,7 @@ jobs:
                   from works w left join site_items si on si.work_id=w.work_id
                   where w.year=2026 and w.countries like '%مصر%' and w.is_series=?
                     and (si.state is null or (si.state in ('held','error') and coalesce(si.attempts,0)<3))
-                  order by (w.work_id in (%s)) desc, syn desc, w.work_id""" % ",".join(os.environ.get("EXTRA", "0").split() or ["0"]), (is_series,)).fetchall()
+                  order by (w.work_id in (EXLIST)) desc, syn desc, w.work_id""".replace("EXLIST", ",".join(os.environ.get("EXTRA", "0").split() or ["0"])), (is_series,)).fetchall()
               return [str(r[0]) for r in rows if ok(r[1])][:n]
           S = pick(1, int(os.environ.get("SER_BATCH", "10")))
           F = pick(0, int(os.environ.get("FILM_BATCH", "15")))

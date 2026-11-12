@@ -33,3 +33,9 @@ const blocks = [['المسلسلات الأكثر مشاهدة وبحثًا', T.
     {!has && <p class="empty">يُحدَّث الترتيب كل يوم، وسيظهر هنا بعد أول تحديث.</p>}
   </div>
 </Base>
+<style>
+  .ep-list .ep-row{display:flex;align-items:center;gap:16px}
+  .ep-list .ep-row>div{flex:1;min-width:0}
+  .ep-list .ep-row .tr-thumb{order:0}
+  .ep-list .ep-row .tr-thumb .poster{width:100%}
+</style>

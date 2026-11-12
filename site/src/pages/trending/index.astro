@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import Poster from '../../components/Poster.astro';
 import { trending, fmtDate } from '../../lib/data.js';
 const T = trending();
 const has = T.series.length + T.films.length > 0;
@@ -24,6 +25,7 @@ const blocks = [['المسلسلات الأكثر مشاهدة وبحثًا', T.
       <div class="sec-head"><h2>{title}</h2></div>
       <ul class="ep-list">{list.map((e, i) => <li><a class="ep-row" href={e.work.path}>
         <span class="num" aria-hidden="true">{i + 1}</span>
+        <span class="tr-thumb" style="width:64px;flex:none;display:block"><Poster s={e.work} alt={`ملصق ${e.work.isFilm ? 'فيلم' : 'مسلسل'} ${e.work.title}`} /></span>
         <div><h3>{e.work.isFilm ? 'فيلم' : 'مسلسل'} {e.work.title}</h3>{e.why && <p>{e.why}</p>}</div>
         <span class="mute">{e.work.facts.year || ''}</span>
       </a></li>)}</ul>

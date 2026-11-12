@@ -27,6 +27,7 @@ jobs:
     env:
       UA: elcinema-licensed-sync (${{ github.repository_owner }})
       SER_BATCH: "10"
+      EXTRA: "2097235 2096865 2098072 2099606 2093970"
       FILM_BATCH: "15"
       BROWSER_MAX_REQ: "20"
       LLM_PROVIDER: deepseek
@@ -37,6 +38,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12", cache: pip }
       - run: pip install -r requirements.txt
+      - name: Fetch priority works (requested by the site owner)
+        run: python elcinema_scraper.py fetch --ids $EXTRA --refresh --data-dir elcinema_data --user-agent "$UA"
       - name: Pick the next unpublished Egyptian 2026 works
         run: |
           python3 - <<'PY'
@@ -51,7 +54,7 @@ jobs:
                   from works w left join site_items si on si.work_id=w.work_id
                   where w.year=2026 and w.countries like '%مصر%' and w.is_series=?
                     and (si.state is null or (si.state in ('held','error') and coalesce(si.attempts,0)<3))
-                  order by syn desc, w.work_id""", (is_series,)).fetchall()
+                  order by (w.work_id in (%s)) desc, syn desc, w.work_id""" % ",".join(os.environ.get("EXTRA", "0").split() or ["0"]), (is_series,)).fetchall()
               return [str(r[0]) for r in rows if ok(r[1])][:n]
           S = pick(1, int(os.environ.get("SER_BATCH", "10")))
           F = pick(0, int(os.environ.get("FILM_BATCH", "15")))

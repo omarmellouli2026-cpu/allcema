@@ -364,7 +364,7 @@ def run(args, llm=P.call_llm, research_fn=research, session=None) -> dict:
                 break
             events = verified_events(res, args.min_sources)
             notes = ""
-            if len(events) < args.min_events and len(summary) < 120:
+            if len(events) < args.min_events and len(summary) < args.min_summary_chars:
                 notes = f"مصادر غير كافية ({len(events)} حدث مؤكد)"
             else:
                 source = summary + " " + res["cited"]
@@ -433,6 +433,7 @@ def main(argv=None) -> int:
     ap.add_argument("--countries", default="مصر", help="بلد/بلدان الإنتاج المسموحة؛ فارغ = كل البلدان")
     ap.add_argument("--min-sources", type=int, default=1, help="أقل عدد مواقع مستقلة لاعتماد حدث")
     ap.add_argument("--min-events", type=int, default=3)
+    ap.add_argument("--min-summary-chars", type=int, default=120, help="أقل طول لملخص موثوق يكفي للكتابة بلا أحداث مؤكدة")
     ap.add_argument("--target", choices=["jsonl", "wordpress", "webhook"], default="jsonl")
     ap.add_argument("--status", choices=["draft", "publish"], default="draft")
     ap.add_argument("--wp-type", default="posts")

@@ -52,6 +52,8 @@ const more = [...(TR.series.length + TR.films.length ? [['trending', '/trending/
   <meta name="theme-color" content="#1c2140" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-ZXX1TDYBFL"></script>
+  <script is:inline>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-ZXX1TDYBFL');</script>
   <slot name="head" />
   {schema.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
 </head>

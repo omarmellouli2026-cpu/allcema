@@ -53,7 +53,7 @@ const more = [...(TR.series.length + TR.films.length ? [['trending', '/trending/
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-ZXX1TDYBFL"></script>
-  <script is:inline>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-ZXX1TDYBFL');</script>
+  <script is:inline>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}var _c=null;try{_c=localStorage.getItem('allcema-consent');}catch(e){}gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:_c==='yes'?'granted':'denied',wait_for_update:500});gtag('js',new Date());gtag('config','G-ZXX1TDYBFL');</script>
   <slot name="head" />
   {schema.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
 </head>
@@ -77,5 +77,8 @@ const more = [...(TR.series.length + TR.films.length ? [['trending', '/trending/
     </div>
     <small>{DISCLOSURE && <>{DISCLOSURE} </>}© {new Date().getFullYear()} {SITE_NAME}</small>
   </div></footer>
+  <style is:inline>#cc{position:fixed;inset:auto 0 0 0;z-index:9999;background:#1c2140;color:#f1f2fa;padding:14px 16px;display:none;font:600 .92rem/1.7 'Noto Kufi Arabic','Segoe UI',Tahoma,sans-serif;box-shadow:0 -4px 18px rgba(0,0,0,.25)}#cc .in{max-width:980px;margin:0 auto;display:flex;gap:12px 18px;align-items:center;flex-wrap:wrap}#cc p{margin:0;flex:1 1 320px}#cc a{color:#fff;text-decoration:underline}#cc button{font:700 .92rem/1 'Noto Kufi Arabic','Segoe UI',Tahoma,sans-serif;padding:11px 20px;border-radius:5px;border:1px solid #7c84bd;background:transparent;color:#f1f2fa;cursor:pointer}#cc button.y{background:#d6245b;border-color:#d6245b;color:#fff}</style>
+  <div id="cc" role="dialog" aria-label="إعدادات ملفات الارتباط"><div class="in"><p>نستخدم ملفات الارتباط لقياس زيارات الموقع وتحسين المحتوى. يمكنك القبول أو الرفض، والموقع يعمل في الحالتين. <a href="/privacy/">سياسة الخصوصية</a></p><div><button class="y" id="cc-y" type="button">أقبل</button> <button id="cc-n" type="button">أرفض</button></div></div></div>
+  <script is:inline>(function(){var b=document.getElementById('cc'),s=null;try{s=localStorage.getItem('allcema-consent');}catch(e){}if(!b||s)return;b.style.display='block';function f(v){try{localStorage.setItem('allcema-consent',v);}catch(e){}if(v==='yes'&&window.gtag)gtag('consent','update',{analytics_storage:'granted'});b.style.display='none';}document.getElementById('cc-y').onclick=function(){f('yes');};document.getElementById('cc-n').onclick=function(){f('no');};})();</script>
 </body>
 </html>

@@ -1,0 +1,62 @@
+name: publish-saudi
+# مسلسلات سعودية من شاهد (بإذن مكتوب من MBC): يفحص القائمة يومياً، يضيف الجديد والحلقات المتاحة،
+# ثم يكتب مقال المسلسل وملخصات الحلقات بنفس بوابات الجودة (DeepSeek). لا يمس روابط elcinema.
+on:
+  schedule:
+    - cron: "17 6,18 * * *"
+  push:
+    paths: [".github/workflows/saudi.yml", "shahid_series.txt"]
+  workflow_dispatch:
+    inputs:
+      recaps:
+        description: max episode recaps this run
+        default: "25"
+
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+
+jobs:
+  saudi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SHAHID_UA: "allcema-bot/1.0 (+https://allcema.com)"
+      SHAHID_PERMISSION: "written-email-from-mbc-2026-11-13"
+      LLM_PROVIDER: deepseek
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Check Shahid for new series and available episodes
+        run: python shahid_scraper.py fetch --urls shahid_series.txt --data-dir elcinema_data --sleep 5
+      - name: Write and publish series articles
+        run: >
+          if [ -n "$SA" ]; then python elcinema_publish.py run --retry-held --data-dir elcinema_data
+          --work-ids $SA --min-year 2026 --countries "" --limit 15
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
+      - name: Write episode recaps (DeepSeek research and rewrite)
+        run: >
+          if [ -n "$SA" ]; then python elcinema_recaps.py --retry-held --data-dir elcinema_data
+          --work-ids $SA --expect-episodes --retry-held-hours 5
+          --min-year 2026 --countries "" --limit ${{ inputs.recaps || 25 }} --daily-cap 150
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
+      - name: Save data to repo
+        if: always()
+        run: |
+          git config user.name "elcinema-bot"; git config user.email "bot@users.noreply.github.com"
+          python - <<'PY'
+          import glob, sqlite3
+          for p in glob.glob("elcinema_data/*.sqlite"):
+              c = sqlite3.connect(p); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()
+          PY
+          git add -A elcinema_data
+          git diff --cached --quiet || (git commit -m "saudi: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

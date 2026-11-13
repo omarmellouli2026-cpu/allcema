@@ -27,7 +27,7 @@ jobs:
     env:
       UA: elcinema-licensed-sync (${{ github.repository_owner }})
       SER_BATCH: "10"
-      EXTRA: "2097235 2096865 2098072 2099606 2093970 2093989"
+      EXTRA: "2102050 2097235 2096865 2098072 2099606 2093970 2093989"
       FILM_BATCH: "15"
       BROWSER_MAX_REQ: "20"
       LLM_PROVIDER: deepseek
@@ -78,6 +78,13 @@ jobs:
           --work-ids $S --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 15 }}
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
+      - name: Episode recaps for Dale Thalith (top traffic series)
+        run: >
+          python elcinema_recaps.py --retry-held --data-dir elcinema_data
+          --work-ids 2102050 --expect-episodes --retry-held-hours 5
+          --min-year 2026 --countries "مصر" --limit 40 --daily-cap 150
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"
       - name: Write episode recaps for the new series
         run: >
           if [ -n "$S" ]; then python elcinema_recaps.py --retry-held --data-dir elcinema_data
@@ -96,4 +103,4 @@ jobs:
           PY
           git add -A elcinema_data
           git diff --cached --quiet || (git commit -m "all-2026: $(date -u +%F_%H:%M)" && git pull --rebase && git push)
-# run: deepseek restored 2026-11-13
+# run: dale-thalith priority 2026-11-13

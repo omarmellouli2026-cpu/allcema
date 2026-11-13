@@ -11,6 +11,7 @@ import requests
 UA = os.environ.get("SHAHID_UA", "allcema-bot/1.0 (+https://allcema.com)")
 COUNTRY = "السعودية"
 BASE_ID = 8_000_000_000
+KEY = "سعود"                      # كلمة تدل على البلد المطلوب (السعودية/سعودي)
 
 
 def now() -> str:
@@ -82,7 +83,14 @@ def upsert(db: sqlite3.Connection, d: dict) -> int:
     wid = work_id_for(d["sid"])
     ts = now()
     j = lambda v: json.dumps(v, ensure_ascii=False)
-    extra = j({"platform": "شاهد", "source": "shahid", "shahid_id": d["sid"], "total_episodes": d["total"]})
+    prev = {}
+    row = db.execute("SELECT extra FROM works WHERE work_id=?", (wid,)).fetchone()
+    try:
+        prev = json.loads(row[0]) if row and row[0] else {}
+    except ValueError:
+        prev = {}
+    extra = j({**prev, "platform": "شاهد", "source": "shahid", "shahid_id": d["sid"], "total_episodes": d["total"],
+               **d.get("verified", {})})
     chash = hashlib.sha1(j([d["title"], d["desc"], d["cast"], d["released"], d["total"]]).encode()).hexdigest()
     old = db.execute("SELECT episodes_count FROM works WHERE work_id=?", (wid,)).fetchone()
     count = max(int(old[0] or 0) if old else 0, d["released"])
@@ -105,6 +113,61 @@ def upsert(db: sqlite3.Connection, d: dict) -> int:
         db.execute("INSERT OR IGNORE INTO episodes VALUES (?,?,?)", (wid, n, ""))
     db.commit()
     return wid
+
+
+VERIFY_SYS = """أنت مدقق معلومات لموقع دراما. تُعطى نتائج بحث ويب عن مسلسل. حدّد بلد إنتاج المسلسل اعتمادًا على نتائج البحث وحدها ولا تخمّن.
+أعد JSON فقط: {"country": "اسم البلد بالعربية أو null", "support": [أرقام النتائج التي تؤكد ذلك], "note": "جملة قصيرة"}.
+إن لم تذكر النتائج البلد صراحةً أو تضاربت فاجعل country=null."""
+
+
+def verify_country(d: dict, want: str, session=requests):
+    """يتأكد عبر بحث DeepSeek أن بلد المسلسل هو want. يعيد (ok, سبب، نطاقات). لا يضيف إلا إذا أكدته ≥2 نطاقات مستقلة."""
+    import elcinema_publish as P
+    import elcinema_recaps as R
+    key = os.environ.get("DEEPSEEK_API_KEY")
+    if not key:
+        return False, "لا مفتاح DeepSeek؛ لم أتحقق", []
+    queries = [f"مسلسل {d['title']} {d['year']} إنتاج", f"مسلسل {d['title']} {' '.join(d['cast'][:2])} دولة الإنتاج"]
+    results, seen = [], set()
+    for q in queries:
+        for r in R.deepseek_search(q, key, session):
+            if r["url"] not in seen:
+                seen.add(r["url"])
+                results.append(r)
+    results = results[:12]
+    if not results:
+        return False, "لا نتائج بحث للتحقق", []
+    lines = []
+    for n, r in enumerate(results, 1):
+        text = re.sub(r"\s+", " ", str(r.get("summary") or r.get("snippet") or "")).strip()[:600]
+        lines.append(f"[{n}] {R.domain(r['url'])} — {str(r.get('title') or '')[:120]}\n{text}")
+    prompt = (f"المسلسل: {d['title']} ({d['year']})، من بطولة: {'، '.join(d['cast'][:4])}.\n"
+              "نتائج البحث:\n" + "\n\n".join(lines) + "\n\nأعد JSON فقط.")
+    obj = R._parse_obj(P.call_deepseek(VERIFY_SYS, prompt, P.llm_config()[2], key, session))
+    country = str(obj.get("country") or "")
+    sup = obj.get("support") or []
+    doms = sorted({R.domain(results[n - 1]["url"]) for n in sup if isinstance(n, int) and 1 <= n <= len(results)})
+    doms = [x for x in doms if x and "shahid" not in x]
+    if KEY not in country:
+        return False, f"البحث يشير إلى بلد آخر أو غير مؤكد ({country or 'غير مذكور'})", doms
+    if len(doms) < 2:
+        return False, "أقل من مصدرين مستقلين يؤكدان البلد", doms
+    return True, country, doms
+
+
+def review_log(args, d: dict, reason: str, doms):
+    p = os.path.join(args.data_dir, "shahid_review.jsonl")
+    with open(p, "a", encoding="utf-8") as f:
+        f.write(json.dumps({"ts": now(), "title": d["title"], "url": d["url"], "dialect": d["country"],
+                            "reason": reason, "domains": doms}, ensure_ascii=False) + "\n")
+
+
+def already_verified(db: sqlite3.Connection, wid: int) -> bool:
+    row = db.execute("SELECT extra FROM works WHERE work_id=?", (wid,)).fetchone()
+    try:
+        return bool(row and json.loads(row[0] or "{}").get("country_verified"))
+    except ValueError:
+        return False
 
 
 def allowed(url: str) -> bool:
@@ -140,6 +203,18 @@ def fetch(args) -> list[int]:
         if not d:
             print("! لم أجد بيانات المسلسل في الصفحة:", u)
             continue
+        wid = work_id_for(d["sid"])
+        if not already_verified(db, wid):
+            if not (KEY in (d["country"] or "") or any("سعود" in g for g in d["genres"])):
+                print(f"✗ {d['title']}: لهجة/وسم شاهد لا يشير إلى {COUNTRY} ({d['country']}) — لم يُضَف")
+                review_log(args, d, "لهجة شاهد غير مطابقة", [])
+                continue
+            ok, why, doms = verify_country(d, COUNTRY, s)
+            if not ok:
+                print(f"✗ {d['title']}: لم يُضَف — {why} {doms}")
+                review_log(args, d, why, doms)
+                continue
+            d["verified"] = {"country_verified": COUNTRY, "country_domains": doms}
         wid = upsert(db, d)
         ids.append(wid)
         print(f"✓ {d['title']} ({d['year']}) id={wid} حلقات متاحة={d['released']}/{d['total']}")

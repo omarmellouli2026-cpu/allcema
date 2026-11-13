@@ -127,3 +127,4 @@ jobs:
           git add -A elcinema_data
           git diff --cached --quiet || (git commit -m "all-2026: $(date -u +%F_%H:%M)" && git pull --rebase && git push)
 # run: dedicated step for El Maitre Samir, held retry 48h, 2026-11-13d
+# trigger 2026-11-13T20:44:00.978Z

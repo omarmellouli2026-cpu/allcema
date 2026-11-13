@@ -1,0 +1,63 @@
+name: publish-saudi-elcinema
+# مسلسلات سعودية 2026 من فهرس elcinema: جلب، ثم تحقق DeepSeek من البلد، ثم مقال المسلسل وملخصات الحلقات.
+on:
+  schedule:
+    - cron: "47 7,19 * * *"
+  push:
+    paths: [".github/workflows/saudi-elcinema.yml", "saudi_elcinema_ids.txt"]
+  workflow_dispatch:
+    inputs:
+      recaps:
+        description: max episode recaps this run
+        default: "25"
+
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+
+jobs:
+  saudi2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      UA: elcinema-licensed-sync (${{ github.repository_owner }})
+      SHAHID_PERMISSION: "written-email-from-mbc-2026-11-13"
+      LLM_PROVIDER: deepseek
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Fetch Saudi series from elcinema
+        run: python elcinema_scraper.py fetch --ids $(sed 's/#.*//' saudi_elcinema_ids.txt | tr -s ' \n' ' ') --refresh --data-dir elcinema_data --user-agent "$UA"
+      - name: Verify country with DeepSeek
+        run: python saudi_elcinema.py --ids-file saudi_elcinema_ids.txt --data-dir elcinema_data
+      - name: Write and publish series articles
+        run: >
+          if [ -n "$SA2" ]; then python elcinema_publish.py run --retry-held --data-dir elcinema_data
+          --work-ids $SA2 --min-year 2026 --countries "" --limit 15
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
+      - name: Write episode recaps (DeepSeek research and rewrite)
+        run: >
+          if [ -n "$SA2" ]; then python elcinema_recaps.py --retry-held --data-dir elcinema_data
+          --work-ids $SA2 --expect-episodes --retry-held-hours 24
+          --min-year 2026 --countries "" --limit ${{ inputs.recaps || 25 }} --daily-cap 150
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
+      - name: Save data to repo
+        if: always()
+        run: |
+          git config user.name "elcinema-bot"; git config user.email "bot@users.noreply.github.com"
+          python - <<'PY'
+          import glob, sqlite3
+          for p in glob.glob("elcinema_data/*.sqlite"):
+              c = sqlite3.connect(p); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()
+          PY
+          git add -A elcinema_data
+          git diff --cached --quiet || (git commit -m "saudi-elcinema: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

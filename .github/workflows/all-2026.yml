@@ -101,10 +101,17 @@ jobs:
           --min-year 2026 --countries "مصر" --limit 40 --daily-cap 150
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"
+      - name: Episode recaps for El Maitre Samir
+        run: >
+          python elcinema_recaps.py --retry-held --data-dir elcinema_data
+          --work-ids 2098225 --expect-episodes --retry-held-hours 12
+          --min-year 2026 --countries "مصر" --limit 20 --daily-cap 150
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"
       - name: Write episode recaps for the new series
         run: >
           if [ -n "$S" ]; then python elcinema_recaps.py --retry-held --data-dir elcinema_data
-          --work-ids $S $EXTRA --expect-episodes --retry-held-hours 5
+          --work-ids $S $EXTRA --expect-episodes --retry-held-hours 48
           --min-year 2026 --countries "مصر" --limit ${{ inputs.recaps || 25 }} --daily-cap 150
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
@@ -119,4 +126,4 @@ jobs:
           PY
           git add -A elcinema_data
           git diff --cached --quiet || (git commit -m "all-2026: $(date -u +%F_%H:%M)" && git pull --rebase && git push)
-# run: add El Maitre Samir 2098225, 2026-11-13c
+# run: dedicated step for El Maitre Samir, held retry 48h, 2026-11-13d

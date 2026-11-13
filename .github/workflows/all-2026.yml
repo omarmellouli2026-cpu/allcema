@@ -97,7 +97,7 @@ jobs:
       - name: Episode recaps for Dale Thalith (top traffic series)
         run: >
           python elcinema_recaps.py --retry-held --data-dir elcinema_data
-          --work-ids 2102050 --expect-episodes --retry-held-hours 5
+          --work-ids 2102050 --min-summary-chars 40 --expect-episodes --retry-held-hours 5
           --min-year 2026 --countries "مصر" --limit 40 --daily-cap 150
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"
@@ -119,4 +119,4 @@ jobs:
           PY
           git add -A elcinema_data
           git diff --cached --quiet || (git commit -m "all-2026: $(date -u +%F_%H:%M)" && git pull --rebase && git push)
-# run: checkout latest main, rerun dale-thalith 2026-11-13
+# run: min-summary-chars 40, rerun dale-thalith 2026-11-13b

@@ -68,19 +68,19 @@ jobs:
         run: if [ -n "$S" ]; then python elcinema_scraper.py fetch --ids $S --refresh --data-dir elcinema_data --user-agent "$UA"; fi
       - name: Write and publish film articles
         run: >
-          if [ -n "$F" ]; then python elcinema_browser.py publish --data-dir elcinema_data --no-only-series --only-films
+          if [ -n "$F" ]; then python elcinema_publish.py run --retry-held --data-dir elcinema_data --no-only-series --only-films
           --work-ids $F --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 15 }}
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
       - name: Write and publish series articles
         run: >
-          if [ -n "$S" ]; then python elcinema_browser.py publish --data-dir elcinema_data
+          if [ -n "$S" ]; then python elcinema_publish.py run --retry-held --data-dir elcinema_data
           --work-ids $S --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 15 }}
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
       - name: Write episode recaps for the new series
         run: >
-          if [ -n "$S" ]; then python elcinema_browser.py recaps --data-dir elcinema_data
+          if [ -n "$S" ]; then python elcinema_recaps.py --retry-held --data-dir elcinema_data
           --work-ids $S $EXTRA --expect-episodes --retry-held-hours 5
           --min-year 2026 --countries "مصر" --limit ${{ inputs.recaps || 25 }} --daily-cap 150
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
@@ -96,4 +96,4 @@ jobs:
           PY
           git add -A elcinema_data
           git diff --cached --quiet || (git commit -m "all-2026: $(date -u +%F_%H:%M)" && git pull --rebase && git push)
-# run: publish browser answers 2026-11-13 gemini4
+# run: deepseek restored 2026-11-13

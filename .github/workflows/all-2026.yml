@@ -78,6 +78,21 @@ jobs:
           --work-ids $S --min-year 2026 --countries "مصر" --limit ${{ inputs.limit || 15 }}
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
+      - name: Load manual episode summaries
+        run: |
+          python3 - <<'PY'
+          import glob, json, sqlite3
+          db = sqlite3.connect(glob.glob("elcinema_data/*.sqlite")[0])
+          for p in glob.glob("elcinema_data/manual_episodes/*.json"):
+              d = json.load(open(p, encoding="utf-8"))
+              wid = int(d["work_id"])
+              for k, v in d["episodes"].items():
+                  db.execute("INSERT INTO episodes(work_id,episode_no,summary) VALUES(?,?,?) ON CONFLICT(work_id,episode_no) DO UPDATE SET summary=excluded.summary", (wid, int(k), v))
+              n = max(int(k) for k in d["episodes"])
+              db.execute("UPDATE works SET episodes_count=MAX(COALESCE(episodes_count,0),?) WHERE work_id=?", (n, wid))
+              print("manual episodes", wid, len(d["episodes"]))
+          db.commit()
+          PY
       - name: Episode recaps for Dale Thalith (top traffic series)
         run: >
           python elcinema_recaps.py --retry-held --data-dir elcinema_data
@@ -103,4 +118,4 @@ jobs:
           PY
           git add -A elcinema_data
           git diff --cached --quiet || (git commit -m "all-2026: $(date -u +%F_%H:%M)" && git pull --rebase && git push)
-# run: dale-thalith priority 2026-11-13
+# run: manual episodes dale-thalith 2026-11-13

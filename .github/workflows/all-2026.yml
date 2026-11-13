@@ -27,7 +27,7 @@ jobs:
     env:
       UA: elcinema-licensed-sync (${{ github.repository_owner }})
       SER_BATCH: "10"
-      EXTRA: "2102050 2097235 2096865 2098072 2099606 2093970 2093989"
+      EXTRA: "2102050 2097235 2096865 2098072 2099606 2093970 2093989 2098225"
       FILM_BATCH: "15"
       BROWSER_MAX_REQ: "20"
       LLM_PROVIDER: deepseek
@@ -119,4 +119,4 @@ jobs:
           PY
           git add -A elcinema_data
           git diff --cached --quiet || (git commit -m "all-2026: $(date -u +%F_%H:%M)" && git pull --rebase && git push)
-# run: min-summary-chars 40, rerun dale-thalith 2026-11-13b
+# run: add El Maitre Samir 2098225, 2026-11-13c

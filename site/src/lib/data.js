@@ -82,17 +82,18 @@ export const desc = (s, n = 155) => {
 
 // تفكيك مقال الحلقة المخزَّن كـ HTML إلى أجزاء يعيد القالب ترتيبها
 export function parseArticle(html) {
+  const st = (x) => strip(x).replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/&amp;/g, '&');
   let note = '', spoiler = false;
-  let body = String(html || '').replace(/<p><small>([\s\S]*?)<\/small><\/p>/g, (m, t) => { note = strip(t); return ''; });
+  let body = String(html || '').replace(/<p><small>([\s\S]*?)<\/small><\/p>/g, (m, t) => { note = st(t); return ''; });
   body = body.replace(/<p><strong>تنبيه[^<]*<\/strong><\/p>/, () => { spoiler = true; return ''; });
   const parts = body.split(/<h2>([\s\S]*?)<\/h2>/);
   const lead = parts[0].trim();
   const sections = [];
   let card = [], faq = [];
   for (let i = 1; i < parts.length; i += 2) {
-    const title = strip(parts[i]), inner = (parts[i + 1] || '').trim();
-    if (title === 'بطاقة العمل') card = [...inner.matchAll(/<tr><th>([\s\S]*?)<\/th><td>([\s\S]*?)<\/td><\/tr>/g)].map((m) => [strip(m[1]), strip(m[2])]);
-    else if (title === 'أسئلة شائعة') faq = [...inner.matchAll(/<h3>([\s\S]*?)<\/h3>\s*<p>([\s\S]*?)<\/p>/g)].map((m) => ({ q: strip(m[1]), a: strip(m[2]) }));
+    const title = st(parts[i]), inner = (parts[i + 1] || '').trim();
+    if (title === 'بطاقة العمل') card = [...inner.matchAll(/<tr><th>([\s\S]*?)<\/th><td>([\s\S]*?)<\/td><\/tr>/g)].map((m) => [st(m[1]), st(m[2])]);
+    else if (title === 'أسئلة شائعة') faq = [...inner.matchAll(/<h3>([\s\S]*?)<\/h3>\s*<p>([\s\S]*?)<\/p>/g)].map((m) => ({ q: st(m[1]), a: st(m[2]) }));
     else if (title === 'أعمال ذات صلة') continue;
     else sections.push({ title, html: inner });
   }

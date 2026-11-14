@@ -52,8 +52,10 @@ const more = [...(TR.series.length + TR.films.length ? [['trending', '/trending/
   <meta name="theme-color" content="#1c2140" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-ZXX1TDYBFL"></script>
-  <script is:inline>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}var _c=null;try{_c=localStorage.getItem('allcema-consent');}catch(e){}gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:_c==='yes'?'granted':'denied',wait_for_update:500});gtag('js',new Date());gtag('config','G-ZXX1TDYBFL');</script>
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="/_astro/noto-kufi-arabic-arabic-800-normal.BRavuVRQ.woff2" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="/_astro/noto-kufi-arabic-arabic-700-normal.CGKuvZQr.woff2" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="/_astro/noto-naskh-arabic-arabic-400-normal.U_i0HMfG.woff2" />
+  <script is:inline>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}var _c=null;try{_c=localStorage.getItem('allcema-consent');}catch(e){}gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:_c==='yes'?'granted':'denied',wait_for_update:500});gtag('js',new Date());gtag('config','G-ZXX1TDYBFL');addEventListener('load',function(){setTimeout(function(){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-ZXX1TDYBFL';document.head.appendChild(s);},1500);});</script>
   <slot name="head" />
   {schema.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
 </head>

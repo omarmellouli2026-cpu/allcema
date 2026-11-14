@@ -41,6 +41,17 @@ jobs:
           python shahid_discover.py commit
       - name: Check Shahid for new series and available episodes
         run: python shahid_scraper.py fetch --urls shahid_series.txt --data-dir elcinema_data --sleep 5
+      - name: Skip works claimed by Gemini (never processed by DeepSeek)
+        run: |
+          python - <<'PY'
+          import os
+          claims = set()
+          if os.path.exists("gemini_claims.txt"):
+              claims = {l.split("#")[0].strip() for l in open("gemini_claims.txt", encoding="utf-8") if l.split("#")[0].strip()}
+          ids = [i for i in os.environ.get("SA", "").split() if i not in claims]
+          open(os.environ["GITHUB_ENV"], "a").write("SA=%s\n" % " ".join(ids))
+          print("claimed by Gemini, skipped:", sorted(claims))
+          PY
       - name: Write and publish series articles
         run: >
           if [ -n "$SA" ]; then python elcinema_publish.py run --retry-held --data-dir elcinema_data

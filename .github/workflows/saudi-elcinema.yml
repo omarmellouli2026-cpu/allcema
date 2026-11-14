@@ -37,6 +37,17 @@ jobs:
         run: python elcinema_scraper.py fetch --ids $(sed 's/#.*//' saudi_elcinema_ids.txt | tr -s ' \n' ' ') --refresh --data-dir elcinema_data --user-agent "$UA"
       - name: Verify country with DeepSeek
         run: python saudi_elcinema.py --ids-file saudi_elcinema_ids.txt --data-dir elcinema_data
+      - name: Skip works claimed by Gemini (never processed by DeepSeek)
+        run: |
+          python - <<'PY'
+          import os
+          claims = set()
+          if os.path.exists("gemini_claims.txt"):
+              claims = {l.split("#")[0].strip() for l in open("gemini_claims.txt", encoding="utf-8") if l.split("#")[0].strip()}
+          ids = [i for i in os.environ.get("SA2", "").split() if i not in claims]
+          open(os.environ["GITHUB_ENV"], "a").write("SA2=%s\n" % " ".join(ids))
+          print("claimed by Gemini, skipped:", sorted(claims))
+          PY
       - name: Write and publish series articles
         run: >
           if [ -n "$SA2" ]; then python elcinema_publish.py run --retry-held --data-dir elcinema_data

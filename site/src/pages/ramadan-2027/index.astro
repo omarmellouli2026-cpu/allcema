@@ -4,15 +4,17 @@ import Tile from '../../components/Tile.astro';
 import { load, joinAr } from '../../lib/data.js';
 const { upcoming } = load();
 // مفتاح الأرشفة: اجعله true عند قرار فتح الأرشفة (يُزال noindex عن هذه الصفحة)
-const READY = false;
+const READY = true;
 const list = [...upcoming].sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0));
 const n = list.length;
 const abs = (p) => new URL(p, Astro.site).href;
 const stars = {};
 for (const s of list) for (const c of (s.facts.cast || []).slice(0, 2)) (stars[c] = stars[c] || []).push(s);
 const topStars = Object.entries(stars).filter(([, v]) => v.length >= 1).sort((a, b) => b[1].length - a[1].length).slice(0, 12);
-const title = 'مسلسلات رمضان 2027: القائمة الكاملة بالأبطال والمخرجين';
+const title = 'مسلسلات رمضان 2027 المصرية: القائمة الكاملة بالأبطال والمخرجين';
 const description = 'قائمة مسلسلات رمضان 2027 المصرية: ' + n + ' مسلسلًا معلنًا حتى الآن مع الأبطال والمخرجين والمؤلفين، وملخص كل حلقة بعد عرضها على Allcema.';
+const lastAt = list.reduce((m, s) => (String(s.at) > m ? String(s.at) : m), '');
+const names = (a) => joinAr((a || []).filter(Boolean));
 const first = list.find((s) => s.image) || null;
 const faq = [
   ['كم عدد مسلسلات رمضان 2027 المصرية المعلنة؟', 'أعلنت حتى الآن ' + n + ' مسلسلًا مصريًا، ونضيف كل عمل جديد عند ظهوره في القوائم المنشورة.'],
@@ -21,7 +23,7 @@ const faq = [
   ['أين أجد ملخص حلقات مسلسلات رمضان؟', 'ننشر ملخص كل حلقة بعد عرضها داخل صفحة المسلسل، مع تنبيه حرق واضح في أول الملخص.'],
 ];
 const schema = [
-  { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description, url: abs('/ramadan-2027/'), inLanguage: 'ar', isPartOf: { '@type': 'WebSite', name: 'Allcema', url: abs('/') } },
+  { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description, url: abs('/ramadan-2027/'), inLanguage: 'ar', ...(lastAt ? { dateModified: lastAt } : {}), about: 'مسلسلات رمضان 2027', isPartOf: { '@type': 'WebSite', name: 'Allcema', url: abs('/') } },
   { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: abs('/') },
     { '@type': 'ListItem', position: 2, name: 'مسلسلات رمضان 2027', item: abs('/ramadan-2027/') } ] },
@@ -42,6 +44,10 @@ const schema = [
       <div class="chips">{topStars.map(([name, v]) => <a class="chip" href={'#' + 'w' + v[0].id.toString().replace('-', 'g')}>{name}<small>{v.length}</small></a>)}</div>
     </section>}
     {n ? <div class="tiles" style="margin-top:34px">{list.map((s) => <div id={'w' + s.id.toString().replace('-', 'g')}><Tile s={s} /></div>)}</div> : <p class="empty">لم تُضف مسلسلات بعد.</p>}
+    {n > 0 && <section class="about-home" style="margin-top:44px">
+      <h2>قائمة مسلسلات رمضان 2027 المصرية بالتفصيل</h2>
+      <ul style="list-style:none;padding:0;margin:18px 0 0;display:grid;gap:14px">{list.map((s) => <li><b>{s.title}</b>{s.facts.cast && s.facts.cast.length ? <span>: بطولة {names(s.facts.cast.slice(0, 4))}</span> : null}{s.facts.directors && s.facts.directors.length ? <span>، إخراج {names(s.facts.directors)}</span> : null}{s.facts.writers && s.facts.writers.length ? <span>، تأليف {names(s.facts.writers)}</span> : null}.</li>)}</ul>
+    </section>}
     <section class="about-home" style="margin-top:44px">
       <h2>أسئلة شائعة عن مسلسلات رمضان 2027</h2>
       {faq.map(([q, a]) => <div><h3>{q}</h3><p>{a}</p></div>)}

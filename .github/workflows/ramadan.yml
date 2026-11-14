@@ -1,0 +1,97 @@
+name: ramadan-2027
+# يضيف مسلسلات رمضان 2027 المصرية من قائمة elcinema (elcinema_data/ramadan_2027.json) ويحمّل ملصقاتها الأصلية.
+# تبقى الصفحات noindex وخارج sitemap حتى قرار الأرشفة.
+on:
+  push:
+    paths: [".github/workflows/ramadan.yml", "elcinema_data/ramadan_2027.json"]
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "1 = أعد تنزيل كل الملصقات"
+        default: "0"
+
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+
+jobs:
+  ramadan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      UA: elcinema-licensed-sync (${{ github.repository_owner }})
+      FORCE: ${{ inputs.force || '0' }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install requests pillow
+      - name: Add Ramadan 2027 series and download original posters
+        run: |
+          python - <<'PY'
+          import io, json, os, re, time
+          from datetime import datetime, timezone
+          import requests
+          from PIL import Image
+          recs = json.load(open("elcinema_data/ramadan_2027.json", encoding="utf-8"))
+          SI = "elcinema_data/site_items.jsonl"
+          have = set()
+          for line in open(SI, encoding="utf-8"):
+              try: have.add(json.loads(line)["work_id"])
+              except Exception: pass
+          now = datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00Z")
+          added = 0
+          with open(SI, "a", encoding="utf-8") as f:
+              for r in recs:
+                  if r["work_id"] in have: continue
+                  facts = {"title": r["title"], "kind": "مسلسل", "year": 2027, "countries": ["مصر"], "cast": r["cast"]}
+                  if r["directors"]: facts["directors"] = r["directors"]
+                  if r["writers"]: facts["writers"] = r["writers"]
+                  o = {"work_id": r["work_id"], "status": "publish", "title": r["title"], "at": now, "upcoming": True, "noindex": True, "ramadan": 2027, "facts": facts}
+                  f.write(json.dumps(o, ensure_ascii=False) + "\n"); added += 1
+          print("new ramadan items:", added)
+          OUT = "site/public/media/posters"
+          os.makedirs(OUT, exist_ok=True)
+          s = requests.Session()
+          s.headers.update({"User-Agent": os.environ["UA"], "Referer": "https://elcinema.com/", "Accept": "image/avif,image/webp,image/*,*/*;q=0.8"})
+          def candidates(u):
+              out = []
+              m = re.search(r"^(.*/)_\d+x\d*_([0-9a-f]+)\.(jpg|jpeg|png|webp)$", u)
+              if m:
+                  base, h, ext = m.groups()
+                  out += [base + h + "." + ext, base + "_600x_" + h + "." + ext, base + "_500x_" + h + "." + ext]
+              out.append(u)
+              return out
+          done = skipped = nourl = failed = 0
+          for r in recs:
+              dest = OUT + "/" + r["gid"] + ".jpg"
+              if os.path.exists(dest) and os.path.getsize(dest) > 2000 and os.environ.get("FORCE") != "1":
+                  skipped += 1; continue
+              u = r.get("poster")
+              if not u or "blank_photos" in u:
+                  nourl += 1; print("no poster", r["gid"], r["title"]); continue
+              ok = False
+              for cu in candidates(u):
+                  try: resp = s.get(cu, timeout=40)
+                  except Exception as e:
+                      print("err", cu, e); time.sleep(2); continue
+                  time.sleep(1.5)
+                  if resp.status_code == 200 and resp.headers.get("Content-Type", "").startswith("image") and len(resp.content) > 4000:
+                      try:
+                          im = Image.open(io.BytesIO(resp.content)).convert("RGB")
+                          if im.width > 600: im = im.resize((600, round(im.height * 600 / im.width)), Image.LANCZOS)
+                          im.save(dest, "JPEG", quality=84, optimize=True, progressive=True)
+                          print("ok", r["gid"], r["title"], im.size); done += 1; ok = True; break
+                      except Exception as e: print("bad image", cu, e)
+              if not ok: failed += 1; print("FAILED", r["gid"], u)
+          print("ramadan posters: downloaded=%d skipped=%d no_poster=%d failed=%d" % (done, skipped, nourl, failed))
+          PY
+      - name: Save to repo
+        if: always()
+        run: |
+          git config user.name "allcema-bot"; git config user.email "bot@users.noreply.github.com"
+          git add -A elcinema_data site/public/media/posters
+          git diff --cached --quiet || (git commit -m "ramadan-2027: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

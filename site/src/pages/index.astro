@@ -17,6 +17,12 @@ for (const e of others) { if (!seenS.has(e.series.title)) { seenS.add(e.series.t
 for (const e of others) { if (rest.length >= 3) break; if (!rest.includes(e)) rest.push(e); }
 const feat = top && top.series.image ? top.series : null;
 const abs = (p) => new URL(p, Astro.site).href;
+const cs = (s) => (s.facts.countries || []).map(String);
+const isSa = (s) => cs(s).some((c) => c.includes('السعودية')) && !cs(s).some((c) => c.includes('مصر'));
+const withImg = (a) => [...a].sort((x, y) => (y.image ? 1 : 0) - (x.image ? 1 : 0));
+const egy = withImg(series.filter((s) => !isSa(s))), sau = withImg(series.filter(isSa));
+const saC = tax.countryBy && tax.countryBy.get('السعودية');
+const saLink = saC ? `/countries/${saC.slug}/` : '/series/';
 const kpis = [[series.length, 'مسلسلًا'], [films.length, 'فيلمًا'], [episodes.length, 'ملخص حلقة'], [tax.people.length, 'ممثلًا ومخرجًا']].filter((k) => k[0] > 0);
 const topGenres = tax.genres.slice(0, 8), topPeople = tax.people.slice(0, 12);
 const schema = [
@@ -56,9 +62,13 @@ const schema = [
       <div class="sec-head"><h2>آخر الحلقات</h2><a href="/episodes/">كل الحلقات</a></div>
       <ul class="ep-list compact">{rest.map((e) => <EpRow e={e} />)}</ul>
     </section>}
-    {series.length > 0 && <section class="section">
-      <div class="sec-head"><h2>المسلسلات</h2><a href="/series/">كل المسلسلات</a></div>
-      <div class="tiles row">{series.slice(0, 5).map((s) => <Tile s={s} />)}</div>
+    {egy.length > 0 && <section class="section" id="egy-series">
+      <div class="sec-head"><h2>مسلسلات مصرية</h2><a href="/series/">كل المسلسلات</a></div>
+      <div class="tiles row">{egy.slice(0, 10).map((s) => <Tile s={s} />)}</div>
+    </section>}
+    {sau.length > 0 && <section class="section" id="sa-series">
+      <div class="sec-head"><h2>مسلسلات سعودية</h2><a href={saLink}>كل المسلسلات السعودية</a></div>
+      <div class="tiles row">{sau.slice(0, 10).map((s) => <Tile s={s} />)}</div>
     </section>}
     {films.length > 0 && <section class="section">
       <div class="sec-head"><h2>أفلام مصرية جديدة</h2><a href="/films/">كل الأفلام</a></div>

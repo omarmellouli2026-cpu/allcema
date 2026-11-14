@@ -1,5 +1,5 @@
 name: publish-all-2026
-# كل أعمال مصر وتركيا 2026 على دفعات: يختار من قاعدة elcinema ما لم يُنشر بعد (يستبعد الإذاعي والبرامج والقصير)
+# كل أعمال مصر 2026 على دفعات: يختار من قاعدة elcinema ما لم يُنشر بعد (يستبعد الإذاعي والبرامج والقصير)
 on:
   schedule:
     - cron: "41 1,13 * * *"
@@ -53,7 +53,7 @@ jobs:
           def pick(is_series, n):
               rows = db.execute("""select w.work_id, w.status, (w.synopsis is not null and w.synopsis<>'') syn
                   from works w left join site_items si on si.work_id=w.work_id
-                  where w.year=2026 and (w.countries like '%مصر%' or w.countries like '%تركيا%') and w.is_series=?
+                  where w.year=2026 and w.countries like '%مصر%' and w.countries not like '%تركيا%' and w.is_series=?
                     and (si.state is null or (si.state in ('held','error') and coalesce(si.attempts,0)<3))
                   order by (w.work_id in (EXLIST)) desc, syn desc, w.work_id""".replace("EXLIST", ",".join(os.environ.get("EXTRA", "0").split() or ["0"])), (is_series,)).fetchall()
               return [str(r[0]) for r in rows if ok(r[1])][:n]

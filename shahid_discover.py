@@ -8,8 +8,8 @@ import shahid_scraper as S
 
 PAGE = "https://api3.shahid.net/proxy/v2.1/editorial/page"
 SKIP = ("Korean", "Turkish", "Bollywood", "Western", "Anime", "Kids", "Podcast")   # لا تحوي أعمالًا سعودية
-LIST = os.environ.get("SHAHID_LIST", LIST)
-CAND = os.environ.get("SHAHID_CANDIDATES", CAND)
+LIST = os.environ.get("SHAHID_LIST", "shahid_series.txt")
+CAND = os.environ.get("SHAHID_CANDIDATES", "shahid_candidates.txt")
 REVIEW = os.environ.get("SHAHID_REVIEW_FILE", "shahid_review.jsonl")
 ONLY = [c for c in os.environ.get("SHAHID_CAROUSELS", "").split(",") if c]
 MAX_NEW = int(os.environ.get("SHAHID_MAX_NEW", "60"))   # سقف المرشّحين في الدورة الواحدة

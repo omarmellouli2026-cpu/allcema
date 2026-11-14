@@ -121,7 +121,7 @@ export function load() {
   const recs = readJsonl('recaps.jsonl');
   // سياسة الموقع: لا أعمال تركية (قرار المالك 2026-11-14)
   const isTurkishWork = (o) => { const c = (o.facts && o.facts.countries || []).map(String); return c.some((x) => x.includes('تركيا')) && !c.some((x) => x.includes('مصر') || x.includes('السعودية')); };
-  const items = readJsonl('site_items.jsonl').filter((o) => !isTurkishWork(o));
+  const items = readJsonl('site_items.jsonl').filter((o) => !(o.facts && o.facts.kind === 'فيلم' && isTurkishWork(o)));
   // توحيد أشكال الحروف في الأسماء والأنواع (ﻛﻮﻣﻴﺪﻱ → كوميدي) قبل أي عرض أو تجميع
   const fixNames = (f) => { if (!f) return; for (const k of ['genres', 'cast', 'directors', 'writers', 'countries']) if (Array.isArray(f[k])) f[k] = [...new Set(f[k].map(norm).filter(Boolean))]; };
   items.forEach((o) => fixNames(o.facts)); recs.forEach((o) => fixNames(o.facts));

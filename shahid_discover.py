@@ -8,11 +8,17 @@ import shahid_scraper as S
 
 PAGE = "https://api3.shahid.net/proxy/v2.1/editorial/page"
 SKIP = ("Korean", "Turkish", "Bollywood", "Western", "Anime", "Kids", "Podcast")   # لا تحوي أعمالًا سعودية
+LIST = os.environ.get("SHAHID_LIST", LIST)
+CAND = os.environ.get("SHAHID_CANDIDATES", CAND)
+REVIEW = os.environ.get("SHAHID_REVIEW_FILE", "shahid_review.jsonl")
+ONLY = [c for c in os.environ.get("SHAHID_CAROUSELS", "").split(",") if c]
 MAX_NEW = int(os.environ.get("SHAHID_MAX_NEW", "60"))   # سقف المرشّحين في الدورة الواحدة
 
 
 def all_carousels(s):
     """كل كاروسيلات صفحة المسلسلات (كل الأقسام) من الواجهة العامة."""
+    if ONLY:
+        return ONLY
     req = {"pageAlias": "series", "profileFolder": "NORTHAFRICA"}
     try:
         j = s.get(PAGE, params={"request": json.dumps(req, separators=(",", ":")), "country": "SA"}, timeout=30).json()
@@ -43,7 +49,7 @@ def sids_in_file(path):
 
 def review_sids():
     out = set()
-    p = os.path.join(DATA, "shahid_review.jsonl")
+    p = os.path.join(DATA, REVIEW)
     if os.path.exists(p):
         for line in open(p, encoding="utf-8"):
             try:
@@ -58,7 +64,7 @@ def review_sids():
 def discover():
     s = requests.Session()
     s.headers.update({"User-Agent": S.UA, "Accept-Language": "ar"})
-    known = sids_in_file("shahid_series.txt") | review_sids()
+    known = sids_in_file(LIST) | review_sids()
     found = {}
     for cid in all_carousels(s) or ["NA-Series-Mood-GulfSeries"]:
         req = {"displayedItems": 0, "id": f"Main/NORTHAFRICA/series/{cid}~Guest", "itemsRequestedStatic": True,
@@ -81,7 +87,7 @@ def discover():
         print(cid, "->", len(j.get("editorialItems") or []), "عنصرًا")
     for sid in list(found)[MAX_NEW:]:
         del found[sid]
-    with open("shahid_candidates.txt", "w", encoding="utf-8") as f:
+    with open(CAND, "w", encoding="utf-8") as f:
         for sid, (t, u) in found.items():
             f.write(u + "\n")
             print("مرشّح جديد:", t, sid)
@@ -89,17 +95,17 @@ def discover():
 
 
 def commit():
-    if not os.path.exists("shahid_candidates.txt"):
+    if not os.path.exists(CAND):
         return
     db = sqlite3.connect(glob.glob(os.path.join(DATA, "*.sqlite"))[0])
     add = []
-    for line in open("shahid_candidates.txt", encoding="utf-8"):
+    for line in open(CAND, encoding="utf-8"):
         u = line.strip()
         sid = S.series_id(urllib.parse.unquote(u)) if u else None
         if sid and db.execute("SELECT 1 FROM works WHERE work_id=?", (S.work_id_for(int(sid)),)).fetchone():
             add.append(u)
     if add:
-        with open("shahid_series.txt", "a", encoding="utf-8") as f:
+        with open(LIST, "a", encoding="utf-8") as f:
             for u in add:
                 f.write(u + "\n")
     print("أُضيف إلى القائمة اليومية:", len(add))

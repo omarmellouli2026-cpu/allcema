@@ -165,7 +165,9 @@ export function load() {
   const byDate = (a, b) => String(b.at).localeCompare(String(a.at)) || (b.ep || 0) - (a.ep || 0);
   const all = series.sort(byDate);
   // الأفلام: عناصر site_items من نوع «فيلم»؛ كل فيلم صفحة واحدة بلا حلقات
-  const films = items.filter(isFilm).map((o) => {
+  const hasCredits = (o) => ['cast', 'directors', 'writers'].some((k) => (o.facts && o.facts[k] || []).length > 0);
+  // بوابة جودة: لا يظهر فيلم بلا أي أسماء وبلا ملصق (مقال حشو)
+  const films = items.filter(isFilm).filter((o) => hasCredits(o) || POSTER(idStr(o.work_id))).map((o) => {
     const f = o.facts, slug = `${latin(f.alt_title) || slugify(f.title)}-${idStr(o.work_id)}`;
     return { kind: 'film', isFilm: true, id: o.work_id, title: f.title, headline: o.title, alt: f.alt_title || '', slug, path: `/films/${slug}/`, facts: f, item: o,
       hue: [...f.title].reduce((a, c) => a + c.charCodeAt(0), 0) % 360, image: POSTER(idStr(o.work_id)), count: 0, at: o.at || '',

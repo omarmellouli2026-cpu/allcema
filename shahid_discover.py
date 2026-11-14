@@ -6,7 +6,25 @@ import glob, json, os, sqlite3, sys, urllib.parse
 import requests
 import shahid_scraper as S
 
-CAROUSELS = ["NA-Series-Mood-GulfSeries", "NA-Series-Mood-ComingSoon", "NA-Series-Mood-NewReleases"]
+PAGE = "https://api3.shahid.net/proxy/v2.1/editorial/page"
+SKIP = ("Korean", "Turkish", "Bollywood", "Western", "Anime", "Kids", "Podcast")   # لا تحوي أعمالًا سعودية
+MAX_NEW = int(os.environ.get("SHAHID_MAX_NEW", "60"))   # سقف المرشّحين في الدورة الواحدة
+
+
+def all_carousels(s):
+    """كل كاروسيلات صفحة المسلسلات (كل الأقسام) من الواجهة العامة."""
+    req = {"pageAlias": "series", "profileFolder": "NORTHAFRICA"}
+    try:
+        j = s.get(PAGE, params={"request": json.dumps(req, separators=(",", ":")), "country": "SA"}, timeout=30).json()
+    except Exception as e:
+        print("! تعذر قراءة الصفحة", e)
+        return []
+    ids = []
+    for c in j.get("carousels") or []:
+        m = __import__("re").search(r"Main/NORTHAFRICA/series/([^\"~]+)", json.dumps(c))
+        if m and not any(k in m.group(1) or k in str(c.get("title", "")) for k in SKIP) and m.group(1) not in ids:
+            ids.append(m.group(1))
+    return ids
 API = "https://api3.shahid.net/proxy/v2.1/editorial/carousel"
 DATA = os.environ.get("DATA_DIR", "elcinema_data")
 
@@ -42,7 +60,7 @@ def discover():
     s.headers.update({"User-Agent": S.UA, "Accept-Language": "ar"})
     known = sids_in_file("shahid_series.txt") | review_sids()
     found = {}
-    for cid in CAROUSELS:
+    for cid in all_carousels(s) or ["NA-Series-Mood-GulfSeries"]:
         req = {"displayedItems": 0, "id": f"Main/NORTHAFRICA/series/{cid}~Guest", "itemsRequestedStatic": True,
                "pageNumber": 0, "pageSize": 50}
         try:
@@ -61,6 +79,8 @@ def discover():
                 continue
             found[int(sid)] = (it.get("title", ""), urllib.parse.quote(urllib.parse.unquote(u), safe=":/"))
         print(cid, "->", len(j.get("editorialItems") or []), "عنصرًا")
+    for sid in list(found)[MAX_NEW:]:
+        del found[sid]
     with open("shahid_candidates.txt", "w", encoding="utf-8") as f:
         for sid, (t, u) in found.items():
             f.write(u + "\n")

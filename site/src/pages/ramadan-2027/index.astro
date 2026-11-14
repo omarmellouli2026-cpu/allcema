@@ -1,17 +1,51 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Tile from '../../components/Tile.astro';
-import { load } from '../../lib/data.js';
+import { load, joinAr } from '../../lib/data.js';
 const { upcoming } = load();
+// مفتاح الأرشفة: اجعله true عند قرار فتح الأرشفة (يُزال noindex عن هذه الصفحة)
+const READY = false;
+const list = [...upcoming].sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0));
+const n = list.length;
+const abs = (p) => new URL(p, Astro.site).href;
+const stars = {};
+for (const s of list) for (const c of (s.facts.cast || []).slice(0, 2)) (stars[c] = stars[c] || []).push(s);
+const topStars = Object.entries(stars).filter(([, v]) => v.length >= 1).sort((a, b) => b[1].length - a[1].length).slice(0, 12);
+const title = 'مسلسلات رمضان 2027: القائمة الكاملة بالأبطال والمخرجين';
+const description = 'قائمة مسلسلات رمضان 2027 المصرية: ' + n + ' مسلسلًا معلنًا حتى الآن مع الأبطال والمخرجين والمؤلفين، وملخص كل حلقة بعد عرضها على Allcema.';
+const first = list.find((s) => s.image) || null;
+const faq = [
+  ['كم عدد مسلسلات رمضان 2027 المصرية المعلنة؟', 'أعلنت حتى الآن ' + n + ' مسلسلًا مصريًا، ونضيف كل عمل جديد عند ظهوره في القوائم المنشورة.'],
+  ['متى يبدأ رمضان 2027؟', 'يُتوقع أن يبدأ شهر رمضان في الثامن أو التاسع من فبراير 2027 بحسب رؤية الهلال، وقد تتغير مواعيد عرض المسلسلات قبل الموسم.'],
+  ['هل تتغير قائمة المسلسلات؟', 'نعم، قد تتغير الأسماء والأبطال وتواريخ العرض قبل الموسم، ونحدّث الصفحة عند أي تغيير مؤكد.'],
+  ['أين أجد ملخص حلقات مسلسلات رمضان؟', 'ننشر ملخص كل حلقة بعد عرضها داخل صفحة المسلسل، مع تنبيه حرق واضح في أول الملخص.'],
+];
+const schema = [
+  { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description, url: abs('/ramadan-2027/'), inLanguage: 'ar', isPartOf: { '@type': 'WebSite', name: 'Allcema', url: abs('/') } },
+  { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: abs('/') },
+    { '@type': 'ListItem', position: 2, name: 'مسلسلات رمضان 2027', item: abs('/ramadan-2027/') } ] },
+  { '@context': 'https://schema.org', '@type': 'ItemList', name: 'مسلسلات رمضان 2027', numberOfItems: n,
+    itemListElement: list.map((s, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(s.path), name: s.title })) },
+  { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
+];
 ---
-<Base title="مسلسلات رمضان 2027" description="مسلسلات رمضان 2027 المعلنة حتى الآن: الأبطال والمخرجون، وملخص كل حلقة بعد عرضها." path="/ramadan-2027/" noindex={true} active="series">
+<Base title={title} description={description} path="/ramadan-2027/" noindex={!READY} active="series" schema={schema} image={first ? first.image : ''}>
   <section class="band page-head"><div class="wrap">
     <nav class="crumbs" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span>/</span>رمضان 2027</nav>
     <h1>مسلسلات رمضان 2027</h1>
-    <p class="lead" style="max-width:62ch">الأعمال المعلنة حتى الآن لموسم رمضان 2027. نضيف كل مسلسل عند الإعلان عنه، وننشر ملخص حلقاته بعد عرضها.</p>
+    <p class="lead" style="max-width:66ch">قائمة الأعمال المصرية المعلنة لموسم رمضان 2027: {n} مسلسلًا حتى الآن مع الأبطال والمخرجين. نضيف كل مسلسل عند الإعلان عنه، وننشر ملخص حلقاته بعد عرضها. تصفّح أيضًا <a href="/series/">كل المسلسلات</a> و<a href="/films/">الأفلام</a>.</p>
   </div></section>
   <div class="wrap">
-    {upcoming.length ? <div class="tiles" style="margin-top:34px">{upcoming.map((s) => <Tile s={s} />)}</div> : <p class="empty">لم تُضف مسلسلات بعد.</p>}
-    <p class="img-cap" style="margin-top:30px">المعلومات مأخوذة من تقارير صحفية منشورة (vetogate.com وyoulyou.com وalsahaa.com وadwaelmadina.com وalmasryingulf.com)، وقد تتغير الأسماء والأبطال قبل العرض.</p>
+    {topStars.length > 0 && <section class="section">
+      <div class="sec-head"><h2>أبرز نجوم الموسم</h2></div>
+      <div class="chips">{topStars.map(([name, v]) => <a class="chip" href={'#' + 'w' + v[0].id.toString().replace('-', 'g')}>{name}<small>{v.length}</small></a>)}</div>
+    </section>}
+    {n ? <div class="tiles" style="margin-top:34px">{list.map((s) => <div id={'w' + s.id.toString().replace('-', 'g')}><Tile s={s} /></div>)}</div> : <p class="empty">لم تُضف مسلسلات بعد.</p>}
+    <section class="about-home" style="margin-top:44px">
+      <h2>أسئلة شائعة عن مسلسلات رمضان 2027</h2>
+      {faq.map(([q, a]) => <div><h3>{q}</h3><p>{a}</p></div>)}
+    </section>
+    <p class="img-cap" style="margin-top:30px">المعلومات مأخوذة من بيانات elcinema المرخّصة ومن تقارير صحفية منشورة، وقد تتغير الأسماء والأبطال قبل العرض. الملصقات للأعمال المعلنة ملك لأصحابها.</p>
   </div>
 </Base>

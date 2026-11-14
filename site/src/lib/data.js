@@ -35,7 +35,7 @@ export const joinAr = (a) => {
 };
 export const num = (n) => String(Number(n));
 // تطبيع الأسماء: يوحّد أشكال العرض (ﻛﻮﻣﻴﺪﻱ → كوميدي) ويزيل التشكيل والمسافات الزائدة
-const norm = (s) => String(s || '').normalize('NFKC').replace(DIAC, '').replace(/\s+/g, ' ').trim();
+const norm = (s) => String(s || '').normalize('NFKC').replace(DIAC, '').replace(/\s+/g, ' ').trim().replace(/^(المملكة العربية السعودية|المملكة السعودية)$/, 'السعودية');
 const escH = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 export const roleText = (e) => { const a = []; if (e.roles.has('dir')) a.push('مخرج'); if (e.roles.has('writer')) a.push('مؤلف'); if (e.roles.has('cast')) a.push('ممثل'); return joinAr(a) || 'من صنّاع الأعمال'; };
 function buildTax(works) {

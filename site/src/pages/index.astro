@@ -24,6 +24,8 @@ const isTr = (s) => cs(s).some((c) => c.includes('تركيا')) && !cs(s).some((
 const egy = withImg(series.filter((s) => !isSa(s) && !isTr(s))), sau = withImg(series.filter(isSa)), trk = withImg(series.filter(isTr));
 const saC = tax.countryBy && tax.countryBy.get('السعودية');
 const saLink = saC ? `/countries/${saC.slug}/` : '/series/';
+const isTrF = (m) => (m.facts && m.facts.countries || []).some((c) => String(c).includes('تركيا')) && !(m.facts.countries || []).some((c) => String(c).includes('مصر'));
+const egyFilms = films.filter((m) => !isTrF(m)), trFilms = films.filter(isTrF);
 const trC = tax.countryBy && tax.countryBy.get('تركيا');
 const trLink = trC ? `/countries/${trC.slug}/` : '/series/';
 const kpis = [[series.length, 'مسلسلًا'], [films.length, 'فيلمًا'], [episodes.length, 'ملخص حلقة'], [tax.people.length, 'ممثلًا ومخرجًا']].filter((k) => k[0] > 0);
@@ -77,9 +79,13 @@ const schema = [
       <div class="sec-head"><h2>مسلسلات تركية</h2><a href={trLink}>كل المسلسلات التركية</a></div>
       <div class="tiles row">{trk.slice(0, 10).map((s) => <Tile s={s} />)}</div>
     </section>}
-    {films.length > 0 && <section class="section">
+    {egyFilms.length > 0 && <section class="section">
       <div class="sec-head"><h2>أفلام مصرية جديدة</h2><a href="/films/">كل الأفلام</a></div>
-      <div class="tiles row">{films.slice(0, 5).map((m) => <Tile s={m} />)}</div>
+      <div class="tiles row">{egyFilms.slice(0, 5).map((m) => <Tile s={m} />)}</div>
+    </section>}
+    {trFilms.length > 0 && <section class="section" id="tr-films">
+      <div class="sec-head"><h2>أفلام تركية وأجنبية</h2><a href="/films/">كل الأفلام</a></div>
+      <div class="tiles row">{trFilms.slice(0, 5).map((m) => <Tile s={m} />)}</div>
     </section>}
     {(topGenres.length > 0 || topPeople.length > 0) && <section class="section explore">
       {topGenres.length > 0 && <div>

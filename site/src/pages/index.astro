@@ -20,9 +20,12 @@ const abs = (p) => new URL(p, Astro.site).href;
 const cs = (s) => (s.facts.countries || []).map(String);
 const isSa = (s) => cs(s).some((c) => c.includes('السعودية')) && !cs(s).some((c) => c.includes('مصر'));
 const withImg = (a) => [...a].sort((x, y) => (y.image ? 1 : 0) - (x.image ? 1 : 0));
-const egy = withImg(series.filter((s) => !isSa(s))), sau = withImg(series.filter(isSa));
+const isTr = (s) => cs(s).some((c) => c.includes('تركيا')) && !cs(s).some((c) => c.includes('مصر')) && !isSa(s);
+const egy = withImg(series.filter((s) => !isSa(s) && !isTr(s))), sau = withImg(series.filter(isSa)), trk = withImg(series.filter(isTr));
 const saC = tax.countryBy && tax.countryBy.get('السعودية');
 const saLink = saC ? `/countries/${saC.slug}/` : '/series/';
+const trC = tax.countryBy && tax.countryBy.get('تركيا');
+const trLink = trC ? `/countries/${trC.slug}/` : '/series/';
 const kpis = [[series.length, 'مسلسلًا'], [films.length, 'فيلمًا'], [episodes.length, 'ملخص حلقة'], [tax.people.length, 'ممثلًا ومخرجًا']].filter((k) => k[0] > 0);
 const topGenres = tax.genres.slice(0, 8), topPeople = tax.people.slice(0, 12);
 const schema = [
@@ -69,6 +72,10 @@ const schema = [
     {sau.length > 0 && <section class="section" id="sa-series">
       <div class="sec-head"><h2>مسلسلات سعودية</h2><a href={saLink}>كل المسلسلات السعودية</a></div>
       <div class="tiles row">{sau.slice(0, 10).map((s) => <Tile s={s} />)}</div>
+    </section>}
+    {trk.length > 0 && <section class="section" id="tr-series">
+      <div class="sec-head"><h2>مسلسلات تركية</h2><a href={trLink}>كل المسلسلات التركية</a></div>
+      <div class="tiles row">{trk.slice(0, 10).map((s) => <Tile s={s} />)}</div>
     </section>}
     {films.length > 0 && <section class="section">
       <div class="sec-head"><h2>أفلام مصرية جديدة</h2><a href="/films/">كل الأفلام</a></div>

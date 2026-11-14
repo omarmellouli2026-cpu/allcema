@@ -9,9 +9,9 @@ from urllib import robotparser
 import requests
 
 UA = os.environ.get("SHAHID_UA", "allcema-bot/1.0 (+https://allcema.com)")
-COUNTRY = "السعودية"
+COUNTRY = os.environ.get("SHAHID_COUNTRY", "السعودية")
 BASE_ID = 8_000_000_000
-KEY = "سعود"                      # كلمة تدل على البلد المطلوب (السعودية/سعودي)
+KEY = os.environ.get("SHAHID_KEY", "سعود")                      # كلمة تدل على البلد المطلوب (السعودية/سعودي)
 
 
 def now() -> str:
@@ -156,7 +156,7 @@ def verify_country(d: dict, want: str, session=requests):
 
 
 def review_log(args, d: dict, reason: str, doms):
-    p = os.path.join(args.data_dir, "shahid_review.jsonl")
+    p = os.path.join(args.data_dir, os.environ.get("SHAHID_REVIEW_FILE", "shahid_review.jsonl"))
     with open(p, "a", encoding="utf-8") as f:
         f.write(json.dumps({"ts": now(), "title": d["title"], "url": d["url"], "dialect": d["country"],
                             "reason": reason, "domains": doms}, ensure_ascii=False) + "\n")
@@ -205,7 +205,7 @@ def fetch(args) -> list[int]:
             continue
         wid = work_id_for(d["sid"])
         if not already_verified(db, wid):
-            if not (KEY in (d["country"] or "") or any("سعود" in g for g in d["genres"])):
+            if not os.environ.get("SHAHID_SKIP_PRECHECK") and not (KEY in (d["country"] or "") or any("سعود" in g for g in d["genres"])):
                 print(f"✗ {d['title']}: لهجة/وسم شاهد لا يشير إلى {COUNTRY} ({d['country']}) — لم يُضَف")
                 review_log(args, d, "لهجة شاهد غير مطابقة", [])
                 continue
@@ -215,6 +215,8 @@ def fetch(args) -> list[int]:
                 review_log(args, d, why, doms)
                 continue
             d["verified"] = {"country_verified": COUNTRY, "country_domains": doms}
+        if COUNTRY != "السعودية":
+            d["country"] = COUNTRY
         wid = upsert(db, d)
         ids.append(wid)
         print(f"✓ {d['title']} ({d['year']}) id={wid} حلقات متاحة={d['released']}/{d['total']}")
@@ -222,9 +224,11 @@ def fetch(args) -> list[int]:
             time.sleep(args.sleep)
     env = os.environ.get("GITHUB_ENV")
     if env:
-        allids = [r[0] for r in db.execute("SELECT work_id FROM works WHERE work_id>=? AND work_id<? ORDER BY work_id",
-                                           (BASE_ID, BASE_ID + 1_000_000_000))]
-        open(env, "a").write("SA=%s\n" % " ".join(map(str, allids)))
+        rows = db.execute("SELECT work_id, COALESCE(countries,'') FROM works WHERE work_id>=? AND work_id<? ORDER BY work_id",
+                          (BASE_ID, BASE_ID + 1_000_000_000)).fetchall()
+        allids = [r[0] for r in rows if "تركيا" not in r[1]]
+        trids = [r[0] for r in rows if "تركيا" in r[1]]
+        open(env, "a").write("SA=%s\nTR=%s\n" % (" ".join(map(str, allids)), " ".join(map(str, trids))))
     return ids
 
 

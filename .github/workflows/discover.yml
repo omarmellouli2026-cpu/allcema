@@ -1,0 +1,44 @@
+name: discover-new
+# يكتشف الأعمال الجديدة التي ينشرها elcinema (صفحات «الجديد» وجدول رمضان القادم) ويضيفها إلى قاعدة البيانات
+# ثم تتولّى publish-all-2026 كتابة مقالاتها ونشرها (مرتين يوميًا)، وتنزّل posters ملصقاتها يوميًا
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  push:
+    paths: [".github/workflows/discover.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      UA: elcinema-licensed-sync (${{ github.repository_owner }})
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Discover and fetch new works
+        run: python elcinema_scraper.py update --data-dir elcinema_data --max-new 40 --user-agent "$UA" | tee discover.log
+      - name: Summary
+        if: always()
+        run: tail -n 30 discover.log || true
+      - name: Save data to repo
+        if: always()
+        run: |
+          git config user.name "elcinema-bot"; git config user.email "bot@users.noreply.github.com"
+          python - <<'PY'
+          import glob, sqlite3
+          for p in glob.glob("elcinema_data/*.sqlite"):
+              c = sqlite3.connect(p); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()
+          PY
+          git add -A elcinema_data
+          git diff --cached --quiet || (git commit -m "data: discover $(date -u +%F_%H:%M)" && git pull --rebase && git push)

@@ -5,7 +5,7 @@ on:
   schedule:
     - cron: "17 6,18 * * *"
   push:
-    paths: [".github/workflows/saudi.yml", "shahid_series.txt"]
+    paths: [".github/workflows/saudi.yml", "shahid_series.txt", "shahid_discover.py"]
   workflow_dispatch:
     inputs:
       recaps:
@@ -34,6 +34,11 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12", cache: pip }
       - run: pip install -r requirements.txt
+      - name: Discover new Shahid series (Gulf / new releases / coming soon)
+        run: |
+          python shahid_discover.py discover
+          if [ -s shahid_candidates.txt ]; then python shahid_scraper.py fetch --urls shahid_candidates.txt --data-dir elcinema_data --sleep 5; fi
+          python shahid_discover.py commit
       - name: Check Shahid for new series and available episodes
         run: python shahid_scraper.py fetch --urls shahid_series.txt --data-dir elcinema_data --sleep 5
       - name: Write and publish series articles
@@ -58,5 +63,5 @@ jobs:
           for p in glob.glob("elcinema_data/*.sqlite"):
               c = sqlite3.connect(p); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()
           PY
-          git add -A elcinema_data
+          git add -A elcinema_data shahid_series.txt
           git diff --cached --quiet || (git commit -m "saudi: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

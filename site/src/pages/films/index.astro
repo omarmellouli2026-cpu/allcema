@@ -1,8 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import FilterGrid from '../../components/FilterGrid.astro';
+import Tile from '../../components/Tile.astro';
 import { load } from '../../lib/data.js';
-const { films } = load();
+const { films: allFilms } = load();
+const isForeign = (m) => !(m.facts && m.facts.countries || []).some((c) => String(c).includes('مصر'));
+const films = allFilms.filter((m) => !isForeign(m)), foreign = allFilms.filter(isForeign);
 const abs = (p) => new URL(p, Astro.site).href;
 const schema = films.length ? [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'الأفلام المصرية', url: abs('/films/'), inLanguage: 'ar',
   mainEntity: { '@type': 'ItemList', itemListElement: films.slice(0, 100).map((m, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(m.path), name: m.title })) } }] : [];
@@ -14,5 +17,9 @@ const schema = films.length ? [{ '@context': 'https://schema.org', '@type': 'Col
   </div></section>
   <div class="wrap">
     {films.length ? <FilterGrid works={films} sorts={[['new', 'الأحدث'], ['az', 'الأبجدي'], ['year', 'سنة الإنتاج']]} noun="فيلمًا" /> : <p class="empty">لا توجد أفلام منشورة بعد.</p>}
+    {foreign.length > 0 && <section class="section" id="foreign-films">
+      <div class="sec-head"><h2>أفلام تركية وأجنبية</h2></div>
+      <div class="tiles">{foreign.map((m) => <Tile s={m} />)}</div>
+    </section>}
   </div>
 </Base>

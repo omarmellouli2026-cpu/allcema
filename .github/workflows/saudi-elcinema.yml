@@ -2,14 +2,14 @@ name: publish-saudi-elcinema
 # مسلسلات سعودية 2026 من فهرس elcinema: جلب، ثم تحقق DeepSeek من البلد، ثم مقال المسلسل وملخصات الحلقات.
 on:
   schedule:
-    - cron: "47 7,19 * * *"
+    - cron: "47 1,7,13,19 * * *"
   push:
     paths: [".github/workflows/saudi-elcinema.yml", "saudi_elcinema_ids.txt"]
   workflow_dispatch:
     inputs:
       recaps:
         description: max episode recaps this run
-        default: "25"
+        default: "50"
 
 permissions:
   contents: write
@@ -47,7 +47,7 @@ jobs:
         run: >
           if [ -n "$SA2" ]; then python elcinema_recaps.py --retry-held --data-dir elcinema_data
           --work-ids $SA2 --expect-episodes --retry-held-hours 24
-          --min-year 2026 --countries "" --limit ${{ inputs.recaps || 25 }} --daily-cap 150
+          --min-year 2026 --countries "" --limit ${{ inputs.recaps || 50 }} --daily-cap 150
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
       - name: Save data to repo

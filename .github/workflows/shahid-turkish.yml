@@ -1,0 +1,75 @@
+name: publish-turkish-shahid
+# مسلسلات تركية فقط (لا أفلام) ومصدرها الوحيد شاهد (بإذن مكتوب من MBC). التحقق من الدولة عبر مصدرين مستقلين.
+on:
+  schedule:
+    - cron: "37 9,21 * * *"
+  push:
+    paths: [".github/workflows/shahid-turkish.yml", "shahid_turkish.txt"]
+  workflow_dispatch:
+    inputs:
+      recaps:
+        description: max episode recaps this run
+        default: "20"
+
+permissions:
+  contents: write
+concurrency:
+  group: elcinema
+  cancel-in-progress: false
+
+jobs:
+  turkish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SHAHID_UA: "allcema-bot/1.0 (+https://allcema.com)"
+      SHAHID_PERMISSION: "written-email-from-mbc-2026-11-13"
+      SHAHID_COUNTRY: "تركيا"
+      SHAHID_KEY: "ترك"
+      SHAHID_SKIP_PRECHECK: "1"
+      SHAHID_REVIEW_FILE: "shahid_review_tr.jsonl"
+      SHAHID_LIST: "shahid_turkish.txt"
+      SHAHID_CANDIDATES: "shahid_candidates_tr.txt"
+      SHAHID_CAROUSELS: "NA-Series-EditorialMood-TurkishSeries"
+      SHAHID_MAX_NEW: "15"
+      LLM_PROVIDER: deepseek
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Discover new Turkish series on Shahid
+        run: |
+          touch shahid_turkish.txt
+          python shahid_discover.py discover
+          if [ -s shahid_candidates_tr.txt ]; then python shahid_scraper.py fetch --urls shahid_candidates_tr.txt --data-dir elcinema_data --sleep 5; fi
+          python shahid_discover.py commit
+      - name: Refresh listed Turkish series and episodes
+        run: if [ -s shahid_turkish.txt ]; then python shahid_scraper.py fetch --urls shahid_turkish.txt --data-dir elcinema_data --sleep 5; fi
+      - name: Write and publish series articles
+        run: >
+          if [ -n "$TR" ]; then python elcinema_publish.py run --retry-held --data-dir elcinema_data
+          --work-ids $TR --min-year 2000 --countries "" --limit 15
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
+      - name: Write episode recaps (DeepSeek research and rewrite)
+        run: >
+          if [ -n "$TR" ]; then python elcinema_recaps.py --retry-held --data-dir elcinema_data
+          --work-ids $TR --expect-episodes --retry-held-hours 5
+          --min-year 2000 --countries "" --limit ${{ inputs.recaps || 20 }} --daily-cap 150
+          --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
+          --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
+      - name: Save data to repo
+        if: always()
+        run: |
+          git config user.name "elcinema-bot"; git config user.email "bot@users.noreply.github.com"
+          python - <<'PY'
+          import glob, sqlite3
+          for p in glob.glob("elcinema_data/*.sqlite"):
+              c = sqlite3.connect(p); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()
+          PY
+          git add -A elcinema_data shahid_turkish.txt
+          git diff --cached --quiet || (git commit -m "turkish-shahid: $(date -u +%F_%H:%M)" && git pull --rebase && git push)

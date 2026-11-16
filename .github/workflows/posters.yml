@@ -47,6 +47,13 @@ jobs:
               except Exception: continue
               items[o["work_id"]] = o
           ids = sorted(w for w, o in items.items() if w > 0 and o.get("status") == "publish")
+          rec = set()
+          for line in open("elcinema_data/recaps.jsonl", encoding="utf-8"):
+              try: o = json.loads(line)
+              except Exception: continue
+              w = (o.get("facts") or {}).get("work_id")
+              if isinstance(w, int) and w > 0 and o.get("status") == "publish": rec.add(w)
+          ids = sorted(set(ids) | rec)
           urls = {}
           for p in glob.glob("elcinema_data/*.sqlite"):
               try:
@@ -120,4 +127,4 @@ jobs:
           git config user.name "allcema-bot"; git config user.email "bot@users.noreply.github.com"
           git add -A site/public/media/posters
           git diff --cached --quiet || (git commit -m "posters: $(date -u +%F_%H:%M)" && git pull --rebase && git push)
-# run: turkish shahid posters, 2026-11-14c
+# run: posters for series with recaps only, 2026-11-16

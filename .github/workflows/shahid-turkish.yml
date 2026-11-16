@@ -52,14 +52,14 @@ jobs:
       - name: Write and publish series articles
         run: >
           if [ -n "$TR" ]; then python elcinema_publish.py run --retry-held --data-dir elcinema_data
-          --work-ids $TR --min-year 2000 --countries "" --limit 15
+          --work-ids $TR --min-year 2026 --countries "" --limit 15
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
       - name: Write episode recaps (DeepSeek research and rewrite)
         run: >
           if [ -n "$TR" ]; then python elcinema_recaps.py --retry-held --data-dir elcinema_data
           --work-ids $TR --expect-episodes --retry-held-hours 5
-          --min-year 2000 --countries "" --limit ${{ inputs.recaps || 20 }} --daily-cap 150
+          --min-year 2026 --countries "" --limit ${{ inputs.recaps || 20 }} --daily-cap 150
           --target jsonl --status "${{ vars.TRACK_STATUS || 'publish' }}"
           --credit-line "${{ vars.DISCLOSURE_LINE }}"; fi
       - name: Save data to repo
